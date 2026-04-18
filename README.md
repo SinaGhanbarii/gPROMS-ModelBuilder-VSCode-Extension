@@ -2,9 +2,6 @@
 
 > Write and edit gPROMS ModelBuilder code in VSCode with full syntax highlighting, 40+ snippets, keyword hover documentation and a real-time error checker — built directly from the official gPROMS user guides.
 
-<p align="center">
-  <img src="icon.png" width="96" alt="gPROMS ModelBuilder Extension Icon"/>
-</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.7.2--beta-orange" alt="Version"/>
@@ -30,14 +27,14 @@
 
 ## Features
 
-| | Feature | What it does |
-|--|---------|-------------|
-| 🎨 | **Syntax highlighting** | Distinct colours for every keyword category — block keywords, section headers, built-in functions, PDE operators, time derivatives `$`, numbers, strings and comments |
-| 📝 | **Code snippets** | 40+ ready-to-use templates for MODEL, PROCESS, TASK, CSTR, PFR, heat exchangers, PDEs, schedules and more — just type a prefix and press `Tab` |
-| 💬 | **Hover documentation** | Hover over any keyword to instantly see its syntax signature, description and a working code example |
-| 🔍 | **Real-time error checking** | Flags missing semicolons, unclosed blocks, misspelled keywords, wrong assignment operators and keywords used in wrong sections — as you type |
-| 🗂️ | **Block folding** | Collapse and expand `MODEL`, `PROCESS`, `TASK`, `FOR`, `WHILE`, `SEQUENCE`, `PARALLEL` blocks |
-| ⌨️ | **Comment toggling** | `Ctrl+/` (Windows/Linux) or `Cmd+/` (Mac) to comment or uncomment lines |
+| Feature | What it does |
+|---------|-------------|
+| **Syntax highlighting** | Distinct colours for every keyword category — block keywords, section headers, built-in functions, PDE operators, time derivatives `$`, numbers, strings and comments |
+| **Code snippets** | 40+ ready-to-use templates for MODEL, PROCESS, TASK, CSTR, PFR, heat exchangers, PDEs, schedules and more — just type a prefix and press `Tab` |
+| **Hover documentation** | Hover over any keyword to instantly see its syntax signature, description and a working code example |
+| **Real-time error checking** | Flags missing semicolons, unclosed blocks, misspelled keywords, wrong assignment operators and keywords used in wrong sections — as you type |
+| **Block folding** | Collapse and expand `MODEL`, `PROCESS`, `TASK`, `FOR`, `WHILE`, `SEQUENCE`, `PARALLEL` blocks |
+| **Comment toggling** | `Ctrl+/` (Windows/Linux) or `Cmd+/` (Mac) to comment or uncomment lines |
 
 ---
 
