@@ -1,0 +1,217 @@
+{
+  "name": "gproms-modelbuilder",
+  "displayName": "gPROMS ModelBuilder",
+  "description": "Syntax highlighting, code snippets, hover documentation and real-time error checking for gPROMS ModelBuilder GPL language",
+  "version": "0.7.2",
+  "publisher": "SinaGhanbarii",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Themes"
+  ],
+  "icon": "icon.png",
+  "keywords": [
+    "gPROMS",
+    "ModelBuilder",
+    "GPL",
+    "process simulation",
+    "chemical engineering"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:gproms"
+  ],
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.11"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "gproms",
+        "aliases": [
+          "gPROMS",
+          "GPL"
+        ],
+        "extensions": [
+          ".gproms",
+          ".gpl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "gproms",
+        "scopeName": "source.gproms",
+        "path": "./syntaxes/gproms.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "gproms",
+        "path": "./snippets/gproms.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "gPROMS Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/gproms-dark-color-theme.json"
+      },
+      {
+        "label": "gPROMS Light",
+        "uiTheme": "vs",
+        "path": "./themes/gproms-light-color-theme.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[gproms]": {
+        "editor.tokenColorCustomizations": {
+          "textMateRules": [
+            {
+              "scope": "comment.line.number-sign.gproms",
+              "settings": {
+                "foreground": "#6c7086",
+                "fontStyle": "italic"
+              }
+            },
+            {
+              "scope": "comment.block.gproms",
+              "settings": {
+                "foreground": "#6c7086",
+                "fontStyle": "italic"
+              }
+            },
+            {
+              "scope": "string.quoted.double.gproms",
+              "settings": {
+                "foreground": "#a6e3a1"
+              }
+            },
+            {
+              "scope": "constant.numeric.float.gproms",
+              "settings": {
+                "foreground": "#fab387"
+              }
+            },
+            {
+              "scope": "keyword.operator.time-derivative.gproms",
+              "settings": {
+                "foreground": "#f38ba8",
+                "fontStyle": "bold"
+              }
+            },
+            {
+              "scope": "keyword.control.entity.gproms",
+              "settings": {
+                "foreground": "#89dceb",
+                "fontStyle": "bold"
+              }
+            },
+            {
+              "scope": "storage.type.section.gproms",
+              "settings": {
+                "foreground": "#89b4fa",
+                "fontStyle": "bold"
+              }
+            },
+            {
+              "scope": "keyword.control.declare.gproms",
+              "settings": {
+                "foreground": "#cba6f7",
+                "fontStyle": "bold"
+              }
+            },
+            {
+              "scope": "storage.type.declare.gproms",
+              "settings": {
+                "foreground": "#cba6f7"
+              }
+            },
+            {
+              "scope": "storage.modifier.gproms",
+              "settings": {
+                "foreground": "#74c7ec"
+              }
+            },
+            {
+              "scope": "keyword.control.flow.gproms",
+              "settings": {
+                "foreground": "#f9e2af",
+                "fontStyle": "bold"
+              }
+            },
+            {
+              "scope": "keyword.control.schedule.gproms",
+              "settings": {
+                "foreground": "#e8923a"
+              }
+            },
+            {
+              "scope": "support.function.builtin.gproms",
+              "settings": {
+                "foreground": "#a6e3a1",
+                "fontStyle": "bold"
+              }
+            },
+            {
+              "scope": "support.function.operator.gproms",
+              "settings": {
+                "foreground": "#94e2d5"
+              }
+            },
+            {
+              "scope": "constant.language.gproms",
+              "settings": {
+                "foreground": "#f2cdcd"
+              }
+            },
+            {
+              "scope": "keyword.operator.assignment.gproms",
+              "settings": {
+                "foreground": "#f38ba8",
+                "fontStyle": "bold"
+              }
+            },
+            {
+              "scope": "keyword.operator.comparison.gproms",
+              "settings": {
+                "foreground": "#f9e2af"
+              }
+            },
+            {
+              "scope": "keyword.operator.arithmetic.gproms",
+              "settings": {
+                "foreground": "#89dceb"
+              }
+            },
+            {
+              "scope": "keyword.operator.boundary.gproms",
+              "settings": {
+                "foreground": "#cba6f7",
+                "fontStyle": "bold"
+              }
+            },
+            {
+              "scope": "keyword.operator.separator.gproms",
+              "settings": {
+                "foreground": "#585b70"
+              }
+            },
+            {
+              "scope": "variable.other.gproms",
+              "settings": {
+                "foreground": "#cdd6f4"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

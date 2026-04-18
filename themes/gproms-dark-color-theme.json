@@ -1,0 +1,192 @@
+{
+  "name": "gPROMS Dark",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#1a1e2e",
+    "editor.foreground": "#cdd6f4",
+    "editorLineNumber.foreground": "#45475a",
+    "editorLineNumber.activeForeground": "#cdd6f4",
+    "editor.selectionBackground": "#313244",
+    "editor.lineHighlightBackground": "#1e2030",
+    "editorCursor.foreground": "#f38ba8",
+    "editor.findMatchBackground": "#f9e2af40",
+    "editor.findMatchHighlightBackground": "#fab38720",
+    "editorBracketMatch.background": "#313244",
+    "editorBracketMatch.border": "#e8923a"
+  },
+  "tokenColors": [
+
+    {
+      "name": "gPROMS — Comments (line # and block { })",
+      "scope": [
+        "comment.line.number-sign.gproms",
+        "comment.block.gproms"
+      ],
+      "settings": {
+        "foreground": "#6c7086",
+        "fontStyle": "italic"
+      }
+    },
+
+    {
+      "name": "gPROMS — Strings",
+      "scope": "string.quoted.double.gproms",
+      "settings": {
+        "foreground": "#a6e3a1"
+      }
+    },
+
+    {
+      "name": "gPROMS — Numbers",
+      "scope": "constant.numeric.float.gproms",
+      "settings": {
+        "foreground": "#fab387"
+      }
+    },
+
+    {
+      "name": "gPROMS — Time derivative operator ($Variable)",
+      "scope": "keyword.operator.time-derivative.gproms",
+      "settings": {
+        "foreground": "#f38ba8",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Top-level entities (MODEL, PROCESS, TASK, END)",
+      "scope": "keyword.control.entity.gproms",
+      "settings": {
+        "foreground": "#89dceb",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Section headers (PARAMETER, VARIABLE, EQUATION, SCHEDULE…)",
+      "scope": "storage.type.section.gproms",
+      "settings": {
+        "foreground": "#89b4fa",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — DECLARE keyword",
+      "scope": "keyword.control.declare.gproms",
+      "settings": {
+        "foreground": "#cba6f7",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — TYPE / STREAM_TYPE",
+      "scope": "storage.type.declare.gproms",
+      "settings": {
+        "foreground": "#cba6f7"
+      }
+    },
+
+    {
+      "name": "gPROMS — Type modifiers (AS, OF, ARRAY, REAL, INTEGER, DEFAULT, FREE, FIXED…)",
+      "scope": "storage.modifier.gproms",
+      "settings": {
+        "foreground": "#74c7ec"
+      }
+    },
+
+    {
+      "name": "gPROMS — Control flow (IF, FOR, WHILE, CASE, WHEN, SWITCH TO…)",
+      "scope": "keyword.control.flow.gproms",
+      "settings": {
+        "foreground": "#f9e2af",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Schedule tasks (SEQUENCE, PARALLEL, CONTINUE, RESET, WITHIN…)",
+      "scope": "keyword.control.schedule.gproms",
+      "settings": {
+        "foreground": "#e8923a"
+      }
+    },
+
+    {
+      "name": "gPROMS — Built-in math functions (EXP, LOG, SQRT, SIGMA, PARTIAL, INTEGRAL…)",
+      "scope": "support.function.builtin.gproms",
+      "settings": {
+        "foreground": "#a6e3a1",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — PDE discretisation operators (PDFSS, PDCOL, BFDIFF, UDS1…)",
+      "scope": "support.function.operator.gproms",
+      "settings": {
+        "foreground": "#94e2d5"
+      }
+    },
+
+    {
+      "name": "gPROMS — Logical keywords (AND, OR, NOT, TRUE, FALSE)",
+      "scope": "constant.language.gproms",
+      "settings": {
+        "foreground": "#f2cdcd"
+      }
+    },
+
+    {
+      "name": "gPROMS — Assignment operator (:=)",
+      "scope": "keyword.operator.assignment.gproms",
+      "settings": {
+        "foreground": "#f38ba8",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Comparison operators (<, >, <=, >=, <>)",
+      "scope": "keyword.operator.comparison.gproms",
+      "settings": {
+        "foreground": "#f9e2af"
+      }
+    },
+
+    {
+      "name": "gPROMS — Arithmetic operators (+, -, *, /, ^)",
+      "scope": "keyword.operator.arithmetic.gproms",
+      "settings": {
+        "foreground": "#89dceb"
+      }
+    },
+
+    {
+      "name": "gPROMS — Boundary open/closed markers (|+ and |-)",
+      "scope": "keyword.operator.boundary.gproms",
+      "settings": {
+        "foreground": "#cba6f7",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Statement terminator (;)",
+      "scope": "keyword.operator.separator.gproms",
+      "settings": {
+        "foreground": "#6c7086"
+      }
+    },
+
+    {
+      "name": "gPROMS — Identifiers (variable and model names)",
+      "scope": "variable.other.gproms",
+      "settings": {
+        "foreground": "#cdd6f4"
+      }
+    }
+
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "gPROMS",
+  "scopeName": "source.gproms",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#time-derivative" },
+    { "include": "#top-level-entities" },
+    { "include": "#section-headers" },
+    { "include": "#type-declaration" },
+    { "include": "#type-keywords" },
+    { "include": "#control-flow" },
+    { "include": "#schedule-tasks" },
+    { "include": "#builtin-functions" },
+    { "include": "#builtin-operators" },
+    { "include": "#logical-keywords" },
+    { "include": "#operators" },
+    { "include": "#identifiers" }
+  ],
+  "repository": {
+
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.gproms",
+          "match": "#.*$"
+        },
+        {
+          "name": "comment.block.gproms",
+          "begin": "\\{",
+          "end": "\\}",
+          "patterns": [
+            { "name": "comment.block.gproms", "match": "." }
+          ]
+        }
+      ]
+    },
+
+    "strings": {
+      "name": "string.quoted.double.gproms",
+      "begin": "\"",
+      "end": "\""
+    },
+
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.gproms",
+          "match": "-?\\b[0-9]+\\.?[0-9]*([eE][+-]?[0-9]+)?\\b"
+        }
+      ]
+    },
+
+    "time-derivative": {
+      "comment": "The $ prefix denotes a time derivative, e.g. $HoldUp",
+      "name": "keyword.operator.time-derivative.gproms",
+      "match": "\\$[a-zA-Z_][a-zA-Z0-9_]*(\\([^)]*\\))?"
+    },
+
+    "top-level-entities": {
+      "comment": "Top-level block keywords — the major structural entities",
+      "name": "keyword.control.entity.gproms",
+      "match": "\\b(MODEL|PROCESS|TASK|END|OPTIMISATION|ESTIMATION)\\b"
+    },
+
+    "section-headers": {
+      "comment": "Sections that appear inside MODEL or PROCESS blocks",
+      "name": "storage.type.section.gproms",
+      "match": "\\b(PARAMETER|VARIABLE|EQUATION|SELECTOR|UNIT|STREAM|BOUNDARY|DISTRIBUTION_DOMAIN|SCHEDULE|INITIAL|ASSIGN|SET|PRESET|CONNECTIONS|SOLUTIONPARAMETERS|REPORT|TOPOLOGY|INTERFACE|OPTIMISATION|ESTIMATION|VARIABLE_TYPES|STREAM_TYPES)\\b"
+    },
+
+    "type-declaration": {
+      "comment": "DECLARE TYPE blocks for user-defined variable types",
+      "patterns": [
+        {
+          "name": "keyword.control.declare.gproms",
+          "match": "\\b(DECLARE)\\b"
+        },
+        {
+          "name": "storage.type.declare.gproms",
+          "match": "\\b(TYPE|STREAM_TYPE)\\b"
+        }
+      ]
+    },
+
+    "type-keywords": {
+      "comment": "Keywords used in declarations and type specifications",
+      "name": "storage.modifier.gproms",
+      "match": "\\b(AS|OF|ARRAY|DISTRIBUTION|FOREIGN_OBJECT|REAL|INTEGER|LOGICAL|DEFAULT|LOWER|UPPER|UNIT|DESCRIPTION|FREE|FIXED|GIVEN|OPEN|CLOSED|NOFLOW|STEADY_STATE|DYNAMIC|IS|OLD|MAXIMISE|MINIMISE|ESTIMATE|VARIABLE|OBJECTIVE|WITHIN_BOUNDS|GRADIENT|NOINT|REPORT_AFTER)\\b"
+    },
+
+    "control-flow": {
+      "comment": "Control flow structures: loops, conditionals, case",
+      "name": "keyword.control.flow.gproms",
+      "match": "\\b(IF|THEN|ELSE|ELSEIF|END_IF|FOR|TO|STEP|BY|DO|END_FOR|WHILE|END_WHILE|CASE|WHEN|OTHERWISE|END|SWITCH|TO|RETURN|BREAK)\\b"
+    },
+
+    "schedule-tasks": {
+      "comment": "Schedule elementary tasks and timing structures",
+      "name": "keyword.control.schedule.gproms",
+      "match": "\\b(SEQUENCE|PARALLEL|CONTINUE|AND|OR|UNTIL|RESET|SWITCH|STOP|MESSAGE|MONITOR|SAVE|RESTORE|RESETRESULTS|PAUSE|SIGNALID|STATUS|WITHIN|DO|MAXIMISE|MINIMISE|ESTIMATE|SENSITIVITY|SIMULTANEOUS|REPORTINGINTERVAL|PRINT|SEND|GET|SENDMATHINFO|ABORT|ERROR|WARNING|INFO|REINITIALISE|REWIND|CHECKPOINT|INTERVAL|AFTER|AT|EVERY)\\b"
+    },
+
+    "builtin-functions": {
+      "comment": "Built-in mathematical functions — verified from user guide",
+      "name": "support.function.builtin.gproms",
+      "match": "\\b(ABS|ACOS|ASIN|ATAN|ATAN2|COS|COSH|EXP|INT|LOG|LOG10|SGN|SIN|SINH|SQRT|TAN|TANH|SIGMA|PRODUCT|MIN|MAX|INTEGRAL|PARTIAL|OLD|INTERPOL|TABLEINT|SMOOTH|HEAVISIDE|NINT|ROUND|FLOOR|CEIL|MOD|DIV|SIGN|ERF|ERFC)\\b"
+    },
+
+    "builtin-operators": {
+      "comment": "gPROMS-specific operators used as functions",
+      "name": "support.function.operator.gproms",
+      "match": "\\b(PDFSS|PDCOL|BFDIFF|CFDIFF|DPDSS|PDSPEC|UDS1|UDS2|NONE)\\b"
+    },
+
+    "logical-keywords": {
+      "comment": "Logical operators and constants",
+      "name": "constant.language.gproms",
+      "match": "\\b(AND|OR|NOT|TRUE|FALSE|MOD|DIV)\\b"
+    },
+
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assignment.gproms",
+          "match": ":="
+        },
+        {
+          "name": "keyword.operator.comparison.gproms",
+          "match": "<=|>=|<>|<|>"
+        },
+        {
+          "name": "keyword.operator.arithmetic.gproms",
+          "match": "\\+|-|\\*|/|\\^"
+        },
+        {
+          "name": "keyword.operator.range.gproms",
+          "match": "\\.\\."
+        },
+        {
+          "name": "keyword.operator.boundary.gproms",
+          "comment": "Open/closed boundary markers e.g. 0|+ or L|-",
+          "match": "\\|[+-]"
+        },
+        {
+          "name": "keyword.operator.separator.gproms",
+          "match": ";"
+        }
+      ]
+    },
+
+    "identifiers": {
+      "name": "variable.other.gproms",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+    }
+
+  }
+}

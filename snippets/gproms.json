@@ -1,0 +1,770 @@
+{
+  "Header Comment Block": {
+    "prefix": "header",
+    "body": [
+      "# TYPE: ${1|MODEL,PROCESS,TASK|}",
+      "{",
+      "    gPROMS Model file",
+      "    Model   : ${2:Name}",
+      "    Author  : ${3:Your Name}",
+      "    Date    : ${4:YYYY-MM-DD}",
+      "    Description : ${5:Brief description}",
+      "}"
+    ],
+    "description": "Insert a standard gPROMS file header with # TYPE: hint for the error checker"
+  },
+  "DECLARE TYPE": {
+    "prefix": "decltype",
+    "body": [
+      "DECLARE TYPE ${1:TypeName}",
+      "  = ${2:1.0} : ${3:-1E10} : ${4:1E10}   UNIT = \"${5:unit}\"   DESCRIPTION = \"${6:description}\"",
+      "END"
+    ],
+    "description": "Declare a user-defined variable type with default, lower/upper bounds and unit"
+  },
+  "DECLARE STREAM TYPE": {
+    "prefix": "declstream",
+    "body": [
+      "${1:StreamTypeName} IS ${2:VariableType1}, ${3:VariableType2}"
+    ],
+    "description": "Declare a stream type"
+  },
+  "MODEL Block": {
+    "prefix": "model",
+    "body": [
+      "MODEL ${1:ModelName}",
+      "",
+      "  PARAMETER",
+      "    ${2:ParamName}  AS  ${3:REAL}  DEFAULT  ${4:1.0}",
+      "",
+      "  VARIABLE",
+      "    ${5:VarName}  AS  ${6:VariableType}",
+      "",
+      "  EQUATION",
+      "    # ${7:equations here}",
+      "",
+      "END  # ${1:ModelName}"
+    ],
+    "description": "Create a new gPROMS MODEL block"
+  },
+  "MODEL with SELECTOR": {
+    "prefix": "modelsel",
+    "body": [
+      "MODEL ${1:ModelName}",
+      "",
+      "  PARAMETER",
+      "    ${2:ParamName}  AS  REAL  DEFAULT  ${3:1.0}",
+      "",
+      "  VARIABLE",
+      "    ${4:VarName}  AS  ${5:VariableType}",
+      "",
+      "  SELECTOR",
+      "    ${6:SelectorVar}  AS  (${7:State1}, ${8:State2})  DEFAULT  ${7:State1}",
+      "",
+      "  EQUATION",
+      "    CASE ${6:SelectorVar} OF",
+      "      WHEN ${7:State1} :",
+      "        ${9:# equations for State1}",
+      "        SWITCH TO ${8:State2} IF ${10:condition} ;",
+      "      WHEN ${8:State2} :",
+      "        ${11:# equations for State2}",
+      "    END  # CASE",
+      "",
+      "END  # ${1:ModelName}"
+    ],
+    "description": "MODEL block with a SELECTOR (discrete state switching)"
+  },
+  "MODEL with DISTRIBUTION_DOMAIN (PDE)": {
+    "prefix": "modelpde",
+    "body": [
+      "MODEL ${1:ModelName}",
+      "",
+      "  PARAMETER",
+      "    ${2:Length}  AS  REAL  DEFAULT  ${3:1.0}",
+      "",
+      "  DISTRIBUTION_DOMAIN",
+      "    ${4:Axial}  AS  [ 0 : ${2:Length} ]",
+      "",
+      "  VARIABLE",
+      "    ${5:C}  AS  DISTRIBUTION(${4:Axial})  OF  ${6:Concentration}",
+      "",
+      "  BOUNDARY",
+      "    # Left boundary (z = 0)",
+      "    ${7:expression at z=0} ;",
+      "    # Right boundary (z = Length)",
+      "    ${8:expression at z=Length} ;",
+      "",
+      "  EQUATION",
+      "    # PDE using PARTIAL operator",
+      "    \\$${5:C}(${9:0|+:${2:Length}|-}) = ${10:D} * PARTIAL(PARTIAL(${5:C}(${9:0|+:${2:Length}|-}), ${4:Axial}), ${4:Axial}) ;",
+      "",
+      "END  # ${1:ModelName}"
+    ],
+    "description": "MODEL block with a DISTRIBUTION_DOMAIN for PDEs"
+  },
+  "PROCESS Block": {
+    "prefix": "process",
+    "body": [
+      "PROCESS ${1:ProcessName}",
+      "",
+      "  UNIT",
+      "    ${2:u101}  AS  ${3:ModelName}",
+      "",
+      "  SET",
+      "    ${2:u101}.${4:ParameterName}  := ${5:value} ;",
+      "",
+      "  ASSIGN",
+      "    ${2:u101}.${6:VariableName}  := ${7:value} ;",
+      "",
+      "  INITIAL",
+      "    ${2:u101}.${8:VariableName}  := ${9:value} ;",
+      "",
+      "  SOLUTIONPARAMETERS",
+      "    REPORTINGINTERVAL  := ${10:1.0} ;",
+      "",
+      "  SCHEDULE",
+      "    CONTINUE FOR ${11:100.0}",
+      "",
+      "END  # ${1:ProcessName}"
+    ],
+    "description": "Create a new gPROMS PROCESS block"
+  },
+  "PROCESS with SEQUENCE": {
+    "prefix": "processseq",
+    "body": [
+      "PROCESS ${1:ProcessName}",
+      "",
+      "  UNIT",
+      "    ${2:u101}  AS  ${3:ModelName}",
+      "",
+      "  SET",
+      "    ${2:u101}.${4:ParameterName}  := ${5:value} ;",
+      "",
+      "  ASSIGN",
+      "    ${2:u101}.${6:VariableName}  := ${7:value} ;",
+      "",
+      "  INITIAL",
+      "    ${2:u101}.${8:VariableName}  := ${9:value} ;",
+      "",
+      "  SOLUTIONPARAMETERS",
+      "    REPORTINGINTERVAL  := ${10:1.0} ;",
+      "",
+      "  SCHEDULE",
+      "    SEQUENCE",
+      "      CONTINUE FOR ${11:50.0}",
+      "      RESET",
+      "        ${2:u101}.${6:VariableName}  := ${12:newValue} ;",
+      "      END",
+      "      CONTINUE FOR ${13:50.0}",
+      "    END  # SEQUENCE",
+      "",
+      "END  # ${1:ProcessName}"
+    ],
+    "description": "PROCESS block with a multi-step SEQUENCE schedule"
+  },
+  "TASK Block": {
+    "prefix": "task",
+    "body": [
+      "TASK ${1:TaskName}",
+      "",
+      "  VARIABLE",
+      "    ${2:LocalVar}  AS  LOGICAL",
+      "",
+      "  SCHEDULE",
+      "    SEQUENCE",
+      "      ${3:# task actions here}",
+      "    END  # SEQUENCE",
+      "",
+      "END  # ${1:TaskName}"
+    ],
+    "description": "Define a TASK entity"
+  },
+  "PARAMETER - REAL": {
+    "prefix": "preal",
+    "body": [
+      "${1:Name}  AS  REAL  DEFAULT  ${2:1.0}"
+    ],
+    "description": "Declare a REAL parameter"
+  },
+  "PARAMETER - INTEGER": {
+    "prefix": "pint",
+    "body": [
+      "${1:Name}  AS  INTEGER  DEFAULT  ${2:1}"
+    ],
+    "description": "Declare an INTEGER parameter"
+  },
+  "PARAMETER - ARRAY OF REAL": {
+    "prefix": "parrreal",
+    "body": [
+      "${1:Name}  AS  ARRAY(${2:N})  OF  REAL"
+    ],
+    "description": "Declare an array of REAL parameters"
+  },
+  "PARAMETER - FOREIGN OBJECT": {
+    "prefix": "pfo",
+    "body": [
+      "${1:Name}  AS  FOREIGN_OBJECT  \"${2:ClassName}\""
+    ],
+    "description": "Declare a FOREIGN_OBJECT parameter (e.g. for Multiflash thermodynamics)"
+  },
+  "VARIABLE - single": {
+    "prefix": "var",
+    "body": [
+      "${1:Name}  AS  ${2:VariableType}"
+    ],
+    "description": "Declare a single variable"
+  },
+  "VARIABLE - ARRAY": {
+    "prefix": "vararr",
+    "body": [
+      "${1:Name}  AS  ARRAY(${2:N})  OF  ${3:VariableType}"
+    ],
+    "description": "Declare a variable array"
+  },
+  "VARIABLE - DISTRIBUTION (PDE)": {
+    "prefix": "vardist",
+    "body": [
+      "${1:Name}  AS  DISTRIBUTION(${2:Domain})  OF  ${3:VariableType}"
+    ],
+    "description": "Declare a distributed variable (for use with DISTRIBUTION_DOMAIN)"
+  },
+  "UNIT instance": {
+    "prefix": "unit",
+    "body": [
+      "${1:instanceName}  AS  ${2:ModelName}"
+    ],
+    "description": "Declare a UNIT instance of a MODEL"
+  },
+  "UNIT ARRAY instance": {
+    "prefix": "unitarr",
+    "body": [
+      "${1:instanceName}  AS  ARRAY(${2:N})  OF  ${3:ModelName}"
+    ],
+    "description": "Declare an array of UNIT instances"
+  },
+  "STREAM declaration": {
+    "prefix": "stream",
+    "body": [
+      "${1:StreamName}  :  ${2:Var1}, ${3:Var2}  AS  ${4:StreamType}"
+    ],
+    "description": "Declare a STREAM inside a MODEL"
+  },
+  "STREAM IS alias": {
+    "prefix": "streamis",
+    "body": [
+      "${1:StreamName}  IS  ${2:unit.SubStreamName}"
+    ],
+    "description": "Declare a STREAM alias using IS keyword"
+  },
+  "STREAM connection (IS)": {
+    "prefix": "connect",
+    "body": [
+      "${1:unitA}.${2:StreamA}  =  ${3:unitB}.${4:StreamB} ;"
+    ],
+    "description": "Connect two STREAM instances via equation"
+  },
+  "WITHIN block": {
+    "prefix": "within",
+    "body": [
+      "WITHIN ${1:unitName} DO",
+      "  ${2:# assignments or resets}",
+      "END"
+    ],
+    "description": "WITHIN...DO...END block (used in SCHEDULE to target a specific unit)"
+  },
+  "Time derivative (ODE)": {
+    "prefix": "ode",
+    "body": [
+      "\\$${1:Variable}  =  ${2:expression} ;"
+    ],
+    "description": "Time derivative equation (ODE). The $ prefix denotes d/dt."
+  },
+  "Algebraic equation": {
+    "prefix": "alg",
+    "body": [
+      "${1:Variable}  =  ${2:expression} ;"
+    ],
+    "description": "Algebraic equation"
+  },
+  "FOR loop (in EQUATION)": {
+    "prefix": "for",
+    "body": [
+      "FOR ${1:i} := ${2:1} TO ${3:N} DO",
+      "  ${4:# equations}",
+      "END"
+    ],
+    "description": "FOR loop (used inside EQUATION section)"
+  },
+  "FOR loop with STEP": {
+    "prefix": "forstep",
+    "body": [
+      "FOR ${1:i} := ${2:1} TO ${3:N} STEP ${4:2} DO",
+      "  ${5:# equations}",
+      "END"
+    ],
+    "description": "FOR loop with STEP increment"
+  },
+  "IF in EQUATION": {
+    "prefix": "if",
+    "body": [
+      "IF ${1:condition} THEN",
+      "  ${2:# true branch}",
+      "ELSE",
+      "  ${3:# false branch}",
+      "END"
+    ],
+    "description": "IF-THEN-ELSE inside EQUATION or SCHEDULE"
+  },
+  "WHILE loop": {
+    "prefix": "while",
+    "body": [
+      "WHILE ${1:condition} DO",
+      "  ${2:# body}",
+      "END"
+    ],
+    "description": "WHILE loop"
+  },
+  "CASE-WHEN": {
+    "prefix": "case",
+    "body": [
+      "CASE ${1:SelectorVar} OF",
+      "  WHEN ${2:State1} :",
+      "    ${3:# equations}",
+      "    SWITCH TO ${4:State2} IF ${5:condition} ;",
+      "  WHEN ${4:State2} :",
+      "    ${6:# equations}",
+      "END  # CASE"
+    ],
+    "description": "CASE-WHEN block for discrete state switching"
+  },
+  "PARTIAL operator (1st order)": {
+    "prefix": "partial",
+    "body": [
+      "PARTIAL(${1:Expression}, ${2:Domain})"
+    ],
+    "description": "First-order partial derivative: PARTIAL(Expression, Domain)"
+  },
+  "PARTIAL operator (2nd order)": {
+    "prefix": "partial2",
+    "body": [
+      "PARTIAL(${1:Expression}, ${2:Domain}, ${2:Domain})"
+    ],
+    "description": "Second-order partial derivative (abbreviated form)"
+  },
+  "INTEGRAL operator": {
+    "prefix": "integral",
+    "body": [
+      "INTEGRAL(${1:z} := ${2:0}:${3:L} ; ${4:Expression})"
+    ],
+    "description": "INTEGRAL operator over a distribution domain"
+  },
+  "SIGMA function": {
+    "prefix": "sigma",
+    "body": [
+      "SIGMA(${1:ArrayExpression})"
+    ],
+    "description": "Sum all elements of an array expression"
+  },
+  "PRODUCT function": {
+    "prefix": "product",
+    "body": [
+      "PRODUCT(${1:ArrayExpression})"
+    ],
+    "description": "Product of all elements of an array expression"
+  },
+  "SOLUTIONPARAMETERS block": {
+    "prefix": "solparam",
+    "body": [
+      "SOLUTIONPARAMETERS",
+      "  REPORTINGINTERVAL  := ${1:1.0} ;",
+      "  AbsoluteTolerance  := ${2:1e-6} ;",
+      "  RelativeTolerance  := ${3:1e-5} ;"
+    ],
+    "description": "SOLUTIONPARAMETERS block inside a PROCESS"
+  },
+  "SCHEDULE - simple CONTINUE": {
+    "prefix": "schedcont",
+    "body": [
+      "SCHEDULE",
+      "  CONTINUE FOR ${1:100.0}"
+    ],
+    "description": "Minimal SCHEDULE with a single CONTINUE FOR"
+  },
+  "SCHEDULE - CONTINUE with UNTIL": {
+    "prefix": "scheduntil",
+    "body": [
+      "SCHEDULE",
+      "  CONTINUE FOR ${1:100.0} OR UNTIL ${2:condition}"
+    ],
+    "description": "CONTINUE FOR with an UNTIL termination condition"
+  },
+  "SCHEDULE - SEQUENCE": {
+    "prefix": "schedseq",
+    "body": [
+      "SCHEDULE",
+      "  SEQUENCE",
+      "    CONTINUE FOR ${1:50.0}",
+      "    RESET",
+      "      ${2:unit.Variable}  := ${3:newValue} ;",
+      "    END",
+      "    CONTINUE FOR ${4:50.0}",
+      "  END  # SEQUENCE"
+    ],
+    "description": "SCHEDULE with a SEQUENCE of actions"
+  },
+  "SCHEDULE - PARALLEL": {
+    "prefix": "schedpar",
+    "body": [
+      "SCHEDULE",
+      "  PARALLEL",
+      "    SEQUENCE",
+      "      ${1:# branch 1}",
+      "    END",
+      "    SEQUENCE",
+      "      ${2:# branch 2}",
+      "    END",
+      "  END  # PARALLEL"
+    ],
+    "description": "SCHEDULE with PARALLEL concurrent execution branches"
+  },
+  "RESET task": {
+    "prefix": "reset",
+    "body": [
+      "RESET",
+      "  ${1:unit.Variable}  := ${2:expression} ;",
+      "END"
+    ],
+    "description": "RESET elementary task \u2014 instantaneous change to an ASSIGN variable"
+  },
+  "RESET with OLD": {
+    "prefix": "resetold",
+    "body": [
+      "RESET",
+      "  ${1:unit.Variable}  := OLD(${1:unit.Variable}) + ${2:delta} ;",
+      "END"
+    ],
+    "description": "RESET using OLD() to apply a step change relative to current value"
+  },
+  "SWITCH task (in SCHEDULE)": {
+    "prefix": "switchtask",
+    "body": [
+      "SWITCH ${1:unit.SelectorVar} TO ${2:NewState}"
+    ],
+    "description": "SWITCH elementary task \u2014 externally change a SELECTOR variable in SCHEDULE"
+  },
+  "MESSAGE task": {
+    "prefix": "message",
+    "body": [
+      "MESSAGE \"${1:message text}\""
+    ],
+    "description": "MESSAGE elementary task \u2014 print a message during simulation"
+  },
+  "STOP task": {
+    "prefix": "stop",
+    "body": [
+      "STOP"
+    ],
+    "description": "STOP elementary task \u2014 terminate the simulation"
+  },
+  "INITIAL - STEADY_STATE": {
+    "prefix": "initss",
+    "body": [
+      "INITIAL",
+      "  STEADY_STATE"
+    ],
+    "description": "Request a steady-state initialisation"
+  },
+  "INITIAL - values": {
+    "prefix": "initial",
+    "body": [
+      "INITIAL",
+      "  ${1:unit}.${2:Variable}  := ${3:value} ;"
+    ],
+    "description": "Specify initial conditions explicitly"
+  },
+  "Mass balance (ODE)": {
+    "prefix": "massbal",
+    "body": [
+      "# Mass balance",
+      "\\$${1:Holdup}  =  ${2:FlowIn} - ${3:FlowOut} ;"
+    ],
+    "description": "Simple mass balance ODE template"
+  },
+  "Component mass balance": {
+    "prefix": "compbal",
+    "body": [
+      "# Component mass balance (index i)",
+      "FOR ${1:i} := 1 TO ${2:NoComp} DO",
+      "  \\$${3:M}(${1:i})  =  ${4:Fin} * ${5:Xin}(${1:i}) - ${6:Fout} * ${7:X}(${1:i}) ;",
+      "END"
+    ],
+    "description": "Component mass balance using a FOR loop"
+  },
+  "Energy balance (ODE)": {
+    "prefix": "energybal",
+    "body": [
+      "# Energy balance",
+      "\\$${1:U}  =  ${2:Hin} - ${3:Hout} + ${4:Q} ;"
+    ],
+    "description": "Simple energy balance ODE template"
+  },
+  "CSTR Model": {
+    "prefix": "modelcstr",
+    "body": [
+      "MODEL ${1:CSTR}",
+      "",
+      "  PARAMETER",
+      "    NoComp          AS  INTEGER",
+      "    V               AS  REAL   DEFAULT  ${2:1.0}    # Reactor volume [m3]",
+      "    Rho             AS  REAL   DEFAULT  ${3:1000.0} # Density [kg/m3]",
+      "    Cp              AS  REAL   DEFAULT  ${4:4200.0} # Heat capacity [J/kg/K]",
+      "    UA              AS  REAL   DEFAULT  ${5:1000.0} # Heat transfer coeff [W/K]",
+      "",
+      "  VARIABLE",
+      "    C               AS  ARRAY(NoComp)  OF  ${6:Concentration}",
+      "    T               AS  ${7:Temperature}",
+      "    Tc              AS  ${7:Temperature}",
+      "    Fin, Fout       AS  ${8:VolumetricFlowrate}",
+      "    Cin             AS  ARRAY(NoComp)  OF  ${6:Concentration}",
+      "    Tin             AS  ${7:Temperature}",
+      "    R               AS  ARRAY(NoComp)  OF  ${9:ReactionRate}",
+      "",
+      "  EQUATION",
+      "    # Volumetric balance",
+      "    \\$V  =  Fin - Fout ;",
+      "",
+      "    # Component balances",
+      "    FOR i := 1 TO NoComp DO",
+      "      \\$C(i)  =  (Fin * Cin(i) - Fout * C(i)) / V + R(i) ;",
+      "    END",
+      "",
+      "    # Energy balance",
+      "    Rho * Cp * \\$T  =  Rho * Cp * Fin * (Tin - T) / V + UA * (Tc - T) ;",
+      "",
+      "END  # ${1:CSTR}"
+    ],
+    "description": "Continuous Stirred Tank Reactor (CSTR) model template"
+  },
+  "Batch Reactor Model": {
+    "prefix": "modelbatch",
+    "body": [
+      "MODEL ${1:BatchReactor}",
+      "",
+      "  PARAMETER",
+      "    NoComp          AS  INTEGER",
+      "    V               AS  REAL   DEFAULT  ${2:1.0}    # Volume [m3]",
+      "    Rho             AS  REAL   DEFAULT  ${3:1000.0} # Density [kg/m3]",
+      "    Cp              AS  REAL   DEFAULT  ${4:4200.0} # Heat capacity [J/kg/K]",
+      "    UA              AS  REAL   DEFAULT  ${5:500.0}  # UA [W/K]",
+      "",
+      "  VARIABLE",
+      "    C               AS  ARRAY(NoComp)  OF  ${6:Concentration}",
+      "    T               AS  ${7:Temperature}",
+      "    Tc              AS  ${7:Temperature}",
+      "    R               AS  ARRAY(NoComp)  OF  ${8:ReactionRate}",
+      "",
+      "  EQUATION",
+      "    # Component balances",
+      "    FOR i := 1 TO NoComp DO",
+      "      \\$C(i)  =  R(i) ;",
+      "    END",
+      "",
+      "    # Energy balance",
+      "    Rho * Cp * \\$T  =  UA * (Tc - T) ;",
+      "",
+      "END  # ${1:BatchReactor}"
+    ],
+    "description": "Batch reactor model template"
+  },
+  "Buffer Tank / Surge Vessel": {
+    "prefix": "modeltank",
+    "body": [
+      "MODEL ${1:BufferTank}",
+      "",
+      "  PARAMETER",
+      "    Rho             AS  REAL   DEFAULT  ${2:1000.0} # Density [kg/m3]",
+      "    CrossSection    AS  REAL   DEFAULT  ${3:1.0}    # Cross-sectional area [m2]",
+      "    Alpha           AS  REAL   DEFAULT  ${4:1.0}    # Valve constant",
+      "",
+      "  VARIABLE",
+      "    Holdup          AS  ${5:Mass}",
+      "    Height          AS  ${6:Length}",
+      "    FlowIn          AS  ${7:MassFlowrate}",
+      "    FlowOut         AS  ${7:MassFlowrate}",
+      "",
+      "  EQUATION",
+      "    # Mass balance",
+      "    \\$Holdup  =  FlowIn - FlowOut ;",
+      "",
+      "    # Geometry",
+      "    Holdup  =  Rho * CrossSection * Height ;",
+      "",
+      "    # Outlet flow (valve equation)",
+      "    FlowOut  =  Alpha * SQRT(Height) ;",
+      "",
+      "END  # ${1:BufferTank}"
+    ],
+    "description": "Buffer tank / surge vessel model (from the Introductory User Guide example)"
+  },
+  "Heat Exchanger Model": {
+    "prefix": "modelhe",
+    "body": [
+      "MODEL ${1:HeatExchanger}",
+      "",
+      "  PARAMETER",
+      "    UA              AS  REAL   DEFAULT  ${2:1000.0} # Overall heat transfer [W/K]",
+      "    mCp_hot         AS  REAL   DEFAULT  ${3:5000.0} # m*Cp hot side [W/K]",
+      "    mCp_cold        AS  REAL   DEFAULT  ${4:4000.0} # m*Cp cold side [W/K]",
+      "",
+      "  VARIABLE",
+      "    T_hot_in        AS  ${5:Temperature}",
+      "    T_hot_out       AS  ${5:Temperature}",
+      "    T_cold_in       AS  ${5:Temperature}",
+      "    T_cold_out      AS  ${5:Temperature}",
+      "    Q               AS  ${6:HeatDuty}",
+      "    LMTD            AS  ${5:Temperature}",
+      "",
+      "  EQUATION",
+      "    # Energy balances",
+      "    Q  =  mCp_hot  * (T_hot_in  - T_hot_out)  ;",
+      "    Q  =  mCp_cold * (T_cold_out - T_cold_in) ;",
+      "",
+      "    # Heat transfer",
+      "    Q  =  UA * LMTD ;",
+      "",
+      "    # Log Mean Temperature Difference",
+      "    LMTD  =  ((T_hot_in - T_cold_out) - (T_hot_out - T_cold_in))",
+      "           / LOG((T_hot_in - T_cold_out) / (T_hot_out - T_cold_in)) ;",
+      "",
+      "END  # ${1:HeatExchanger}"
+    ],
+    "description": "Steady-state heat exchanger model with LMTD"
+  },
+  "Arrhenius Rate Expression": {
+    "prefix": "arrhenius",
+    "body": [
+      "# Arrhenius reaction rate",
+      "${1:k}  =  ${2:k0} * EXP(- ${3:Ea} / (${4:R} * ${5:T})) ;"
+    ],
+    "description": "Arrhenius kinetic rate constant expression"
+  },
+  "Antoine Equation (vapour pressure)": {
+    "prefix": "antoine",
+    "body": [
+      "# Antoine equation for vapour pressure of ${1:component}",
+      "LOG10(${2:Psat})  =  ${3:A} - ${4:B} / (${5:T} + ${6:C}) ;"
+    ],
+    "description": "Antoine equation for vapour pressure"
+  },
+  "Raoult's Law": {
+    "prefix": "raoult",
+    "body": [
+      "# Raoult's Law \u2014 vapour-liquid equilibrium",
+      "FOR i := 1 TO NoComp DO",
+      "  ${1:y}(i) * ${2:P}  =  ${3:x}(i) * ${4:Psat}(i) ;",
+      "END"
+    ],
+    "description": "Raoult's Law VLE equation loop"
+  },
+  "Summation Constraints (VLE)": {
+    "prefix": "sumvle",
+    "body": [
+      "# Summation equations",
+      "SIGMA(${1:x})  =  1 ;",
+      "SIGMA(${2:y})  =  1 ;"
+    ],
+    "description": "Mole fraction summation constraints for VLE"
+  },
+  "PFR / Tubular Reactor (1D PDE)": {
+    "prefix": "modelpfr",
+    "body": [
+      "MODEL ${1:PFR}",
+      "",
+      "  PARAMETER",
+      "    NoComp          AS  INTEGER",
+      "    L               AS  REAL   DEFAULT  ${2:1.0}    # Reactor length [m]",
+      "    D               AS  REAL   DEFAULT  ${3:1e-5}   # Axial diffusivity [m2/s]",
+      "    u               AS  REAL   DEFAULT  ${4:0.1}    # Superficial velocity [m/s]",
+      "",
+      "  DISTRIBUTION_DOMAIN",
+      "    Axial  AS  [ 0 : L ]",
+      "",
+      "  VARIABLE",
+      "    C  AS  DISTRIBUTION(NoComp, Axial)  OF  ${5:Concentration}",
+      "    T  AS  DISTRIBUTION(Axial)          OF  ${6:Temperature}",
+      "",
+      "  BOUNDARY",
+      "    # Danckwerts inlet BC (z = 0)",
+      "    FOR i := 1 TO NoComp DO",
+      "      u * C(i, 0)  =  u * ${7:Cin}(i) + D * PARTIAL(C(i, 0|+:L), Axial) ;",
+      "    END",
+      "    # Outlet BC (z = L) \u2014 Neumann (no diffusive flux)",
+      "    FOR i := 1 TO NoComp DO",
+      "      PARTIAL(C(i, 0:L|-), Axial)  =  0 ;",
+      "    END",
+      "",
+      "  EQUATION",
+      "    FOR i := 1 TO NoComp DO",
+      "      \\$C(i, 0|+:L|-)  =",
+      "        - u * PARTIAL(C(i, 0|+:L|-), Axial)",
+      "        + D * PARTIAL(C(i, 0|+:L|-), Axial, Axial)",
+      "        + ${8:R}(i) ;",
+      "    END",
+      "",
+      "END  # ${1:PFR}"
+    ],
+    "description": "Plug Flow Reactor with axial dispersion (1D PDE using PARTIAL and BOUNDARY)"
+  },
+  "DECLARE TYPE block (full set)": {
+    "prefix": "decltypes",
+    "body": [
+      "DECLARE TYPE Temperature",
+      "  = 298.15 : 200.0 : 1000.0   UNIT = \"K\"   DESCRIPTION = \"Temperature\"",
+      "END",
+      "",
+      "DECLARE TYPE Pressure",
+      "  = 101325.0 : 0.0 : 1e8   UNIT = \"Pa\"   DESCRIPTION = \"Pressure\"",
+      "END",
+      "",
+      "DECLARE TYPE Concentration",
+      "  = 1.0 : 0.0 : 1e6   UNIT = \"mol/m3\"   DESCRIPTION = \"Molar concentration\"",
+      "END",
+      "",
+      "DECLARE TYPE MoleFraction",
+      "  = 0.5 : 0.0 : 1.0   UNIT = \"-\"   DESCRIPTION = \"Mole fraction\"",
+      "END",
+      "",
+      "DECLARE TYPE MassFlowrate",
+      "  = 1.0 : 0.0 : 1e6   UNIT = \"kg/s\"   DESCRIPTION = \"Mass flowrate\"",
+      "END",
+      "",
+      "DECLARE TYPE VolumetricFlowrate",
+      "  = 1e-3 : 0.0 : 1e3   UNIT = \"m3/s\"   DESCRIPTION = \"Volumetric flowrate\"",
+      "END",
+      "",
+      "DECLARE TYPE HeatDuty",
+      "  = 1000.0 : -1e9 : 1e9   UNIT = \"W\"   DESCRIPTION = \"Heat duty\"",
+      "END",
+      "",
+      "DECLARE TYPE Length",
+      "  = 1.0 : 0.0 : 1e4   UNIT = \"m\"   DESCRIPTION = \"Length\"",
+      "END",
+      "",
+      "DECLARE TYPE Mass",
+      "  = 1.0 : 0.0 : 1e9   UNIT = \"kg\"   DESCRIPTION = \"Mass\"",
+      "END",
+      "",
+      "DECLARE TYPE ReactionRate",
+      "  = 0.0 : -1e6 : 1e6   UNIT = \"mol/m3/s\"   DESCRIPTION = \"Reaction rate\"",
+      "END"
+    ],
+    "description": "Full set of common DECLARE TYPE definitions for chemical engineering"
+  },
+  "File type hint": {
+    "prefix": "typehint",
+    "body": [
+      "# TYPE: ${1|MODEL,PROCESS,TASK|}"
+    ],
+    "description": "Insert a # TYPE: hint so the error checker knows this file's block type"
+  }
+}

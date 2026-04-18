@@ -1,0 +1,190 @@
+{
+  "name": "gPROMS Light",
+  "type": "light",
+  "colors": {
+    "editor.background": "#f8f9fc",
+    "editor.foreground": "#2d3142",
+    "editorLineNumber.foreground": "#adb5bd",
+    "editorLineNumber.activeForeground": "#2d3142",
+    "editor.selectionBackground": "#d0e8ff",
+    "editor.lineHighlightBackground": "#eef2ff",
+    "editorCursor.foreground": "#e8923a",
+    "editorBracketMatch.background": "#e8923a20",
+    "editorBracketMatch.border": "#e8923a"
+  },
+  "tokenColors": [
+
+    {
+      "name": "gPROMS — Comments",
+      "scope": [
+        "comment.line.number-sign.gproms",
+        "comment.block.gproms"
+      ],
+      "settings": {
+        "foreground": "#9ca3af",
+        "fontStyle": "italic"
+      }
+    },
+
+    {
+      "name": "gPROMS — Strings",
+      "scope": "string.quoted.double.gproms",
+      "settings": {
+        "foreground": "#2d6a4f"
+      }
+    },
+
+    {
+      "name": "gPROMS — Numbers",
+      "scope": "constant.numeric.float.gproms",
+      "settings": {
+        "foreground": "#b5460f"
+      }
+    },
+
+    {
+      "name": "gPROMS — Time derivative ($Variable)",
+      "scope": "keyword.operator.time-derivative.gproms",
+      "settings": {
+        "foreground": "#c0392b",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Top-level entities (MODEL, PROCESS, TASK, END)",
+      "scope": "keyword.control.entity.gproms",
+      "settings": {
+        "foreground": "#006d77",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Section headers (PARAMETER, VARIABLE, EQUATION…)",
+      "scope": "storage.type.section.gproms",
+      "settings": {
+        "foreground": "#1565c0",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — DECLARE keyword",
+      "scope": "keyword.control.declare.gproms",
+      "settings": {
+        "foreground": "#6a0dad",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — TYPE / STREAM_TYPE",
+      "scope": "storage.type.declare.gproms",
+      "settings": {
+        "foreground": "#6a0dad"
+      }
+    },
+
+    {
+      "name": "gPROMS — Type modifiers (AS, OF, REAL, INTEGER, DEFAULT, FREE…)",
+      "scope": "storage.modifier.gproms",
+      "settings": {
+        "foreground": "#0277bd"
+      }
+    },
+
+    {
+      "name": "gPROMS — Control flow (IF, FOR, WHILE, CASE, WHEN…)",
+      "scope": "keyword.control.flow.gproms",
+      "settings": {
+        "foreground": "#e65100",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Schedule tasks (SEQUENCE, PARALLEL, RESET, WITHIN…)",
+      "scope": "keyword.control.schedule.gproms",
+      "settings": {
+        "foreground": "#e8923a"
+      }
+    },
+
+    {
+      "name": "gPROMS — Built-in math functions (EXP, LOG, SQRT, SIGMA…)",
+      "scope": "support.function.builtin.gproms",
+      "settings": {
+        "foreground": "#1b7a34",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — PDE discretisation operators (PDFSS, PDCOL…)",
+      "scope": "support.function.operator.gproms",
+      "settings": {
+        "foreground": "#00695c"
+      }
+    },
+
+    {
+      "name": "gPROMS — Logical keywords (AND, OR, NOT, TRUE, FALSE)",
+      "scope": "constant.language.gproms",
+      "settings": {
+        "foreground": "#7b2d8b"
+      }
+    },
+
+    {
+      "name": "gPROMS — Assignment operator (:=)",
+      "scope": "keyword.operator.assignment.gproms",
+      "settings": {
+        "foreground": "#c0392b",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Comparison operators",
+      "scope": "keyword.operator.comparison.gproms",
+      "settings": {
+        "foreground": "#e65100"
+      }
+    },
+
+    {
+      "name": "gPROMS — Arithmetic operators",
+      "scope": "keyword.operator.arithmetic.gproms",
+      "settings": {
+        "foreground": "#006d77"
+      }
+    },
+
+    {
+      "name": "gPROMS — Boundary markers (|+ and |-)",
+      "scope": "keyword.operator.boundary.gproms",
+      "settings": {
+        "foreground": "#6a0dad",
+        "fontStyle": "bold"
+      }
+    },
+
+    {
+      "name": "gPROMS — Statement terminator (;)",
+      "scope": "keyword.operator.separator.gproms",
+      "settings": {
+        "foreground": "#adb5bd"
+      }
+    },
+
+    {
+      "name": "gPROMS — Identifiers",
+      "scope": "variable.other.gproms",
+      "settings": {
+        "foreground": "#2d3142"
+      }
+    }
+
+  ]
+}
