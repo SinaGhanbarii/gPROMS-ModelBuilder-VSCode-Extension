@@ -321,19 +321,19 @@ The extension applies its own colours automatically on top of your active VSCode
 
 | Colour | Keyword category | Examples |
 |--------|-----------------|---------|
-| 🩵 Cyan bold | Top-level blocks | `MODEL` `PROCESS` `TASK` `END` |
-| 🔵 Blue bold | Section headers | `PARAMETER` `VARIABLE` `EQUATION` `SCHEDULE` |
-| 🟣 Purple bold | Type declarations | `DECLARE` `TYPE` |
-| 🔷 Sky blue | Type modifiers | `AS` `OF` `REAL` `INTEGER` `DEFAULT` `FREE` `FIXED` |
-| 🟡 Yellow bold | Control flow | `IF` `FOR` `WHILE` `CASE` `WHEN` `SWITCH` |
-| 🟠 Orange | Schedule tasks | `SEQUENCE` `PARALLEL` `RESET` `WITHIN` `CONTINUE` |
-| 🟢 Green bold | Math functions | `EXP` `LOG` `SQRT` `SIGMA` `PARTIAL` `INTEGRAL` |
-| 🩶 Teal | PDE discretisation | `PDFSS` `PDCOL` `BFDIFF` `CFDIFF` |
-| 🌸 Pink | Logical constants | `AND` `OR` `NOT` `TRUE` `FALSE` |
-| 🔴 Red bold | Time derivative & assignment | `$Variable` `:=` |
-| 🍑 Peach | Numbers | `1.0` `1e-6` `298.15` |
-| 🟢 Soft green | Strings | `"kg/s"` `"temperature"` |
-| ⚫ Grey italic | Comments | `# line comment`   `{ block comment }` |
+| Cyan bold | Top-level blocks | `MODEL` `PROCESS` `TASK` `END` |
+| Blue bold | Section headers | `PARAMETER` `VARIABLE` `EQUATION` `SCHEDULE` |
+| Purple bold | Type declarations | `DECLARE` `TYPE` |
+| Sky blue | Type modifiers | `AS` `OF` `REAL` `INTEGER` `DEFAULT` `FREE` `FIXED` |
+| Yellow bold | Control flow | `IF` `FOR` `WHILE` `CASE` `WHEN` `SWITCH` |
+| Orange | Schedule tasks | `SEQUENCE` `PARALLEL` `RESET` `WITHIN` `CONTINUE` |
+| Green bold | Math functions | `EXP` `LOG` `SQRT` `SIGMA` `PARTIAL` `INTEGRAL` |
+| Teal | PDE discretisation | `PDFSS` `PDCOL` `BFDIFF` `CFDIFF` |
+| Pink | Logical constants | `AND` `OR` `NOT` `TRUE` `FALSE` |
+| Red bold | Time derivative & assignment | `$Variable` `:=` |
+| Peach | Numbers | `1.0` `1e-6` `298.15` |
+| Soft green | Strings | `"kg/s"` `"temperature"` |
+| Grey italic | Comments | `# line comment`   `{ block comment }` |
 
 ---
 
