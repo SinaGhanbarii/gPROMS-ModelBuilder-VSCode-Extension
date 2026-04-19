@@ -429,6 +429,18 @@ function check(tokens, symbols, fileType) {
       i++; continue;
     }
 
+    // ── SWITCH TO <State> — verify state exists in symbols ──────────────────
+    if (t.upper === 'SWITCH') {
+      // Expect: SWITCH TO <StateName> IF ...
+      const toTok  = tokens[i+1];
+      const state  = tokens[i+2];
+      if (toTok && toTok.upper === 'TO' && state && /^[A-Za-z_]/.test(state.text)) {
+        if (!symbols.has(state.upper) && !ALL_KEYWORDS.has(state.upper)) {
+          err(state, `"\${state.text}" is not a declared SELECTOR state. Check the SELECTOR section of this MODEL.`);
+        }
+      }
+    }
+
     // ── Schedule-only keywords outside SCHEDULE ───────────────────────────────
     if (SCHEDULE_ONLY_KEYWORDS.has(t.upper)) {
       const inSched = inStack('SEQUENCE') || inStack('PARALLEL') ||
@@ -482,6 +494,55 @@ function check(tokens, symbols, fileType) {
   }
 
   // ── After full scan: unclosed blocks ─────────────────────────────────────
+  // ── Duplicate variable/parameter names in same section ──────────────────
+  // Scan tokens for repeated identifiers declared with AS in the same section
+  {
+    let dupSection = null;
+    const sectionNames = new Map(); // sectionKey -> Set of declared names
+
+    for (let di = 0; di < tokens.length; di++) {
+      const dt = tokens[di];
+
+      // Track section changes
+      if (['PARAMETER','VARIABLE'].includes(dt.upper)) {
+        dupSection = dt.upper;
+        const key = dt.line + ':' + dt.upper;
+        if (!sectionNames.has(key)) sectionNames.set(key, new Set());
+        continue;
+      }
+      if (['EQUATION','SELECTOR','UNIT','STREAM','BOUNDARY',
+           'DISTRIBUTION_DOMAIN','SET','ASSIGN','INITIAL',
+           'SOLUTIONPARAMETERS','SCHEDULE','MODEL','PROCESS','TASK','END'].includes(dt.upper)) {
+        dupSection = null; continue;
+      }
+
+      // Look for: <name> AS pattern — the name before AS is the declaration
+      if (dt.upper === 'AS' && di > 0 && dupSection) {
+        const nameTok = tokens[di - 1];
+        if (!nameTok || !(/^[A-Za-z_]/.test(nameTok.text))) continue;
+        if (ALL_KEYWORDS.has(nameTok.upper)) continue;
+
+        // Find the section key for the current section opening
+        // (use the most recent PARAMETER or VARIABLE line as key)
+        let secLine = -1;
+        for (let si = di - 1; si >= 0; si--) {
+          if (['PARAMETER','VARIABLE'].includes(tokens[si].upper)) {
+            secLine = tokens[si].line; break;
+          }
+        }
+        const key = secLine + ':' + dupSection;
+        if (!sectionNames.has(key)) sectionNames.set(key, new Set());
+        const names = sectionNames.get(key);
+
+        if (names.has(nameTok.upper)) {
+          warn(nameTok, `"\${nameTok.text}" is declared more than once in the same \${dupSection} section.`);
+        } else {
+          names.add(nameTok.upper);
+        }
+      }
+    }
+  }
+
   // Skip virtual pre-seeded block (no real opener to report)
   for (const unclosed of stack.filter(s => !s.virtual)) {
     const closer = BLOCK_OPEN_CLOSE[unclosed.keyword] || 'END';
@@ -563,10 +624,21 @@ function checkSemicolons(tokens, symbols, diagnostics) {
     const toks = byLine.get(lineNum) || [];
     if (toks.length === 0) return false;
     const first = toks[0].text;
-    // Starts with an operator — clearly a continuation
-    if (['+', '-', '*', '/'].includes(first)) return true;
-    // Starts with a closing paren/bracket (e.g. continuation of function args)
+
+    // Starts with arithmetic operator — clearly a continuation
+    if (['+', '-', '*', '/', '^'].includes(first)) return true;
+
+    // Starts with closing paren/bracket
     if (first === ')' || first === ']') return true;
+
+    // Previous line ended with an operator or open paren — this is a continuation
+    const prevToks = byLine.get(lineNum - 1) || [];
+    if (prevToks.length > 0) {
+      const lastPrev = prevToks[prevToks.length - 1].text;
+      // Previous line ended with operator, open paren, or comma — continuation
+      if (['+', '-', '*', '/', '^', '(', ',', '='].includes(lastPrev)) return true;
+    }
+
     return false;
   }
 
@@ -864,13 +936,10 @@ connection.onHover((params) => {
   return {
     contents: {
       kind: MarkupKind.Markdown,
-      value: [
-        `**\`${word.toUpperCase()}\`** — gPROMS GPL`, '',
-        `\`\`\`\n${entry.signature}\n\`\`\``, '',
-        entry.description, '',
-        '**Example:**',
-        `\`\`\`gproms\n${entry.example}\n\`\`\``
-      ].join('\n')
+      value: '**`' + word.toUpperCase() + '`** — gPROMS GPL\n\n```\n'
+           + entry.signature + '\n```\n\n'
+           + entry.description + '\n\n**Example:**\n```gproms\n'
+           + entry.example + '\n```'
     }
   };
 });

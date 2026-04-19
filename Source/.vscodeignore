@@ -1,0 +1,14 @@
+# Bundled — ship dist/ only, not the source or node_modules
+node_modules/**
+extension.js
+server/**
+package-lock.json
+
+# Dev tools
+.vscode/**
+*.vsix
+*.zip
+
+# GitHub-only docs
+CHANGELOG.md
+samples/**

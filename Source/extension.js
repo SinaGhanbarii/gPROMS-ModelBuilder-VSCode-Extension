@@ -12,7 +12,7 @@ let client;
 function activate(context) {
   // Path to our language server script
   const serverModule = context.asAbsolutePath(
-    path.join('server', 'server.js')
+    path.join('dist', 'server.js')
   );
 
   // Server launch options

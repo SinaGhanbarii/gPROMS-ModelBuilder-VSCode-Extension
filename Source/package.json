@@ -2,7 +2,7 @@
   "name": "gproms-modelbuilder",
   "displayName": "gPROMS ModelBuilder",
   "description": "Syntax highlighting, code snippets, hover documentation and real-time error checking for gPROMS ModelBuilder GPL language",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "publisher": "SinaGhanbarii",
   "engines": {
     "vscode": "^1.75.0"
@@ -20,7 +20,7 @@
     "process simulation",
     "chemical engineering"
   ],
-  "main": "./extension.js",
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:gproms"
   ],
@@ -213,5 +213,12 @@
         }
       }
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SinaGhanbarii/gproms-modelbuilder"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
   }
 }

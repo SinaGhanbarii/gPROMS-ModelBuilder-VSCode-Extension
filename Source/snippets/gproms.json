@@ -766,5 +766,101 @@
       "# TYPE: ${1|MODEL,PROCESS,TASK|}"
     ],
     "description": "Insert a # TYPE: hint so the error checker knows this file's block type"
+  },
+  "DECLARE STREAM_TYPE": {
+    "prefix": "declstreamtype",
+    "body": [
+      "${1:StreamTypeName}  IS  ${2:VariableType1}, ${3:VariableType2}"
+    ],
+    "description": "Declare a stream type (used with STREAM section in MODEL)"
+  },
+  "OPTIMISATION entity": {
+    "prefix": "optimisation",
+    "body": [
+      "OPTIMISATION ${1:OptimisationName}",
+      "",
+      "  USING ${2:ProcessName}",
+      "",
+      "  OBJECTIVE",
+      "    ${3:MINIMISE}  ${4:u101.CostFunction} ;",
+      "",
+      "  FREE",
+      "    ${4:u101}.${5:DecisionVariable}  WITHIN  [ ${6:LowerBound} : ${7:UpperBound} ] ;",
+      "",
+      "  CONSTRAINTS",
+      "    ${4:u101}.${8:ConstraintVar}  <=  ${9:UpperLimit} ;",
+      "",
+      "  SOLUTIONPARAMETERS",
+      "    REPORTINGINTERVAL  :=  ${10:1.0} ;",
+      "",
+      "END  # ${1:OptimisationName}"
+    ],
+    "description": "OPTIMISATION entity for steady-state or dynamic optimisation"
+  },
+  "OPTIMISATION entity (dynamic)": {
+    "prefix": "optimisationdyn",
+    "body": [
+      "OPTIMISATION ${1:OptimisationName}",
+      "",
+      "  USING ${2:ProcessName}",
+      "",
+      "  OBJECTIVE",
+      "    ${3:MINIMISE}  ${4:u101.ObjectiveFunction} ;",
+      "",
+      "  FREE",
+      "    ${4:u101}.${5:DecisionVar}  WITHIN  [ ${6:0.0} : ${7:1.0} ]",
+      "      AT  ${8:t1}, ${9:t2} ;",
+      "",
+      "  CONSTRAINTS",
+      "    ${4:u101}.${10:StateVar}  >=  ${11:LowerBound} ;",
+      "",
+      "  SOLUTIONPARAMETERS",
+      "    REPORTINGINTERVAL  :=  ${12:1.0} ;",
+      "",
+      "END  # ${1:OptimisationName}"
+    ],
+    "description": "OPTIMISATION entity for dynamic (time-varying) optimisation"
+  },
+  "ESTIMATION entity": {
+    "prefix": "estimation",
+    "body": [
+      "ESTIMATION ${1:EstimationName}",
+      "",
+      "  USING ${2:ProcessName}",
+      "",
+      "  ESTIMATE",
+      "    ${2:ProcessName}.${3:u101}.${4:ParameterName}",
+      "      WITHIN  [ ${5:LowerBound} : ${6:UpperBound} ]",
+      "      INITIAL  ${7:InitialGuess} ;",
+      "",
+      "  MEASUREMENTS",
+      "    ${2:ProcessName}.${3:u101}.${8:MeasuredVar}  FROM  \"${9:datafile.txt}\"",
+      "      VARIANCE  ${10:1.0} ;",
+      "",
+      "  SOLUTIONPARAMETERS",
+      "    REPORTINGINTERVAL  :=  ${11:1.0} ;",
+      "",
+      "END  # ${1:EstimationName}"
+    ],
+    "description": "ESTIMATION entity for parameter estimation against experimental data"
+  },
+  "SENSITIVITY analysis": {
+    "prefix": "sensitivity",
+    "body": [
+      "SENSITIVITY ${1:SensitivityName}",
+      "",
+      "  USING ${2:ProcessName}",
+      "",
+      "  SENSITIVITY_OF",
+      "    ${2:ProcessName}.${3:u101}.${4:OutputVar} ;",
+      "",
+      "  WITH_RESPECT_TO",
+      "    ${2:ProcessName}.${3:u101}.${5:InputVar}",
+      "      RANGE  [ ${6:LowerBound} : ${7:UpperBound} ]",
+      "      NPOINTS  ${8:10} ;",
+      "",
+      "END  # ${1:SensitivityName}"
+    ],
+    "description": "SENSITIVITY analysis entity"
   }
 }
