@@ -3,7 +3,7 @@
 > Write and edit gPROMS ModelBuilder code in VSCode with full syntax highlighting, 40+ snippets, keyword hover documentation and a real-time error checker — built directly from the official gPROMS user guides.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.7.2--beta-orange" alt="Version"/>
+  <img src="https://img.shields.io/badge/version-0.8.0--beta-orange" alt="Version"/>
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License"/>
   <img src="https://img.shields.io/badge/VSCode-%5E1.75.0-blue" alt="VSCode"/>
   <img src="https://img.shields.io/badge/language-gPROMS%20GPL-teal" alt="Language"/>
