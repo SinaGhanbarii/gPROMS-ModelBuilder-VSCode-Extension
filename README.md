@@ -1,9 +1,9 @@
 # gPROMS ModelBuilder — VSCode Extension
 
-> Write and edit gPROMS ModelBuilder code in VSCode with full syntax highlighting, 40+ snippets, keyword hover documentation and a real-time error checker — built directly from the official gPROMS user guides.
+> Write and edit gPROMS ModelBuilder code in VSCode with full syntax highlighting, 65+ snippets, keyword hover documentation, real-time error checking and auto-complete — built directly from the official gPROMS user guides.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.8.0--beta-orange" alt="Version"/>
+  <img src="https://img.shields.io/badge/version-0.9.0-orange" alt="Version"/>
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License"/>
   <img src="https://img.shields.io/badge/VSCode-%5E1.75.0-blue" alt="VSCode"/>
   <img src="https://img.shields.io/badge/language-gPROMS%20GPL-teal" alt="Language"/>
@@ -28,12 +28,13 @@
 
 | Feature | What it does |
 |---------|-------------|
-| **Syntax highlighting** | Distinct colours for every keyword category — block keywords, section headers, built-in functions, PDE operators, time derivatives `$`, numbers, strings and comments |
-| **Code snippets** | 40+ ready-to-use templates for MODEL, PROCESS, TASK, CSTR, PFR, heat exchangers, PDEs, schedules and more — just type a prefix and press `Tab` |
-| **Hover documentation** | Hover over any keyword to instantly see its syntax signature, description and a working code example |
-| **Real-time error checking** | Flags missing semicolons, unclosed blocks, misspelled keywords, wrong assignment operators and keywords used in wrong sections — as you type |
-| **Block folding** | Collapse and expand `MODEL`, `PROCESS`, `TASK`, `FOR`, `WHILE`, `SEQUENCE`, `PARALLEL` blocks |
-| **Comment toggling** | `Ctrl+/` (Windows/Linux) or `Cmd+/` (Mac) to comment or uncomment lines |
+| 🎨 **Syntax highlighting** | Distinct colours for every keyword category — block keywords, section headers, built-in functions, PDE operators, time derivatives `$`, numbers, strings and comments |
+| 📝 **Code snippets** | 65+ ready-to-use templates for MODEL, PROCESS, TASK, CSTR, PFR, heat exchangers, PDEs, OPTIMISATION, ESTIMATION, schedules and more — just type a prefix and press `Tab` |
+| 💬 **Hover documentation** | Hover over any keyword to instantly see its syntax signature, description and a working code example |
+| 🔍 **Real-time error checking** | Flags missing semicolons, unclosed blocks, misspelled keywords, wrong assignment operators and keywords used in wrong sections — as you type |
+| ✨ **Auto-complete** | Context-aware suggestions: your declared variables, parameters and unit names — plus all keywords and built-in functions |
+| 🗂️ **Block folding** | Collapse and expand `MODEL`, `PROCESS`, `TASK`, `FOR`, `WHILE`, `SEQUENCE`, `PARALLEL` blocks |
+| ⌨️ **Comment toggling** | `Ctrl+/` (Windows/Linux) or `Cmd+/` (Mac) to comment or uncomment lines |
 
 ---
 
@@ -46,7 +47,7 @@
 
 ### Step 1 — Download the `.vsix` file
 
-Go to the [**Releases**](https://github.com/SinaGhanbarii/gproms-modelbuilder/releases) page of this repository and download the latest `.vsix` file (e.g. `gproms-modelbuilder-0.7.2.vsix`).
+Go to the [**Releases**](https://github.com/SinaGhanbarii/gPROMS-ModelBuilder-VSCode-Extension/releases) page of this repository and download the latest `.vsix` file (e.g. `gproms-modelbuilder-0.9.0.vsix`).
 
 ### Step 2 — Install in VSCode
 
@@ -64,7 +65,7 @@ There are two ways to install it:
 **Option B — From the terminal**
 
 ```bash
-code --install-extension gproms-modelbuilder-0.7.2.vsix
+code --install-extension gproms-modelbuilder-0.9.0.vsix
 ```
 
 ### Step 3 — Verify the installation
@@ -112,10 +113,16 @@ Add **one of these lines** at the very top of your file:
 ```
 # TYPE: TASK
 ```
+```
+# TYPE: OPTIMISATION
+```
+```
+# TYPE: ESTIMATION
+```
 
 This tells the error checker what kind of gPROMS block your file contains, enabling full structural validation. Without it, only safe checks run (misspelled keywords and missing semicolons) to avoid false positives.
 
-> **Fastest way:** type `typehint` + `Tab` and pick MODEL, PROCESS or TASK from the dropdown. Or type `header` + `Tab` for a full file header that includes the hint plus author and date fields.
+> **Fastest way:** type `typehint` + `Tab` and pick the block type from the dropdown. Or type `header` + `Tab` for a full file header that includes the hint plus author and date fields.
 
 A complete file should start like this:
 
@@ -174,38 +181,34 @@ Every placeholder is pre-selected so you can tab through and fill in your names 
 
 ---
 
-### 4 — Hover over keywords for instant documentation
+### 4 — Auto-complete as you type
 
-Hover your mouse over **any** gPROMS keyword to see a documentation card appear:
+Press `Ctrl+Space` at any point, or just start typing — suggestions appear automatically. The auto-complete engine provides:
 
-```
-MODEL
-─────────────────────────────────────
-MODEL <n> ... END
+- **Your declared symbols** — variable names, parameter names, unit instance names and type names from the current file, updated on every keystroke
+- **Built-in functions** — `EXP`, `LOG`, `SQRT`, `SIGMA`, `PARTIAL` etc. with their signature shown
+- **All gPROMS keywords** — structural keywords, control flow, schedule tasks
+- **Discretisation methods** — `CFDM`, `BFDM`, `PDCOL` etc.
+- **Context snippets** — after typing `AS`, the top suggestions become `AS REAL DEFAULT`, `AS ARRAY() OF`, `AS FOREIGN_OBJECT` etc.
 
-Defines a mathematical model. Contains PARAMETER,
-VARIABLE, EQUATION, SELECTOR, UNIT, STREAM,
-DISTRIBUTION_DOMAIN, and BOUNDARY sections.
-
-Example:
-  MODEL BufferTank
-    PARAMETER
-      Rho AS REAL DEFAULT 1000.0
-    ...
-  END
-```
-
-Hover documentation is available for 50+ keywords including `MODEL`, `PROCESS`, `EQUATION`, `FOR`, `IF`, `CASE`, `SELECTOR`, `PARTIAL`, `INTEGRAL`, `SIGMA`, `EXP`, `SQRT`, `RESET`, `CONTINUE`, `SEQUENCE`, `PARALLEL`, `DECLARE`, `FOREIGN_OBJECT` and more.
+> **After a dot** (`Solar_heater.`): only your declared symbols are suggested — keywords are suppressed so `unit.variable` references stay clean.
 
 ---
 
-### 5 — Understand the error messages
+### 5 — Hover over keywords for instant documentation
+
+Hover your mouse over **any** gPROMS keyword to see a documentation card with its full syntax signature, description and a working code example. Available for 50+ keywords including `MODEL`, `PROCESS`, `EQUATION`, `FOR`, `IF`, `CASE`, `SELECTOR`, `PARTIAL`, `INTEGRAL`, `SIGMA`, `EXP`, `SQRT`, `RESET`, `CONTINUE`, `SEQUENCE`, `PARALLEL`, `DECLARE`, `FOREIGN_OBJECT` and more.
+
+---
+
+### 6 — Understand the error messages
 
 The error checker runs automatically every time you type or save. Problems appear in two ways:
 
 **Inline underlines in the editor:**
 - 🔴 **Red underline** — error that must be fixed (e.g. unclosed `MODEL` block, missing `;`, misspelled keyword)
 - 🟡 **Yellow underline** — warning (e.g. using `=` instead of `:=` in a `SET` section)
+- 🔵 **Blue underline on line 1** — informational hint to add a `# TYPE:` hint for full checking
 
 **Problems panel** (`Ctrl+Shift+M`):
 Shows all errors and warnings with their exact line number and a clear message. Click any entry to jump straight to that line.
@@ -239,6 +242,7 @@ Shows all errors and warnings with their exact line number and a clear message. 
 | `task` | `TASK...END` entity |
 | `decltype` | `DECLARE TYPE` with default, bounds and unit |
 | `decltypes` | Full set of common engineering type declarations |
+| `declstreamtype` | `DECLARE STREAM_TYPE` |
 
 ### Model templates
 | Prefix | Expands to |
@@ -248,6 +252,14 @@ Shows all errors and warnings with their exact line number and a clear message. 
 | `modelbatch` | Batch reactor |
 | `modelhe` | Heat exchanger with LMTD |
 | `modelpfr` | Plug flow reactor — 1D PDE with axial dispersion |
+
+### Optimisation and estimation
+| Prefix | Expands to |
+|--------|-----------|
+| `optimisation` | Steady-state `OPTIMISATION` entity |
+| `optimisationdyn` | Dynamic `OPTIMISATION` with time-varying decision variables |
+| `estimation` | `ESTIMATION` entity for parameter estimation |
+| `sensitivity` | `SENSITIVITY` analysis entity |
 
 ### Declarations
 | Prefix | Expands to |
@@ -318,13 +330,13 @@ The extension applies its own colours automatically on top of your active VSCode
 | Colour | Keyword category | Examples |
 |--------|-----------------|---------|
 | Cyan bold | Top-level blocks | `MODEL` `PROCESS` `TASK` `END` |
-| Blue bold | Section headers | `PARAMETER` `VARIABLE` `EQUATION` `SCHEDULE` |
+| Blue bold | Section headers | `PARAMETER` `VARIABLE` `EQUATION` `SCHEDULE` `INITIALISATION_PROCEDURE` |
 | Purple bold | Type declarations | `DECLARE` `TYPE` |
 | Sky blue | Type modifiers | `AS` `OF` `REAL` `INTEGER` `DEFAULT` `FREE` `FIXED` |
 | Yellow bold | Control flow | `IF` `FOR` `WHILE` `CASE` `WHEN` `SWITCH` |
 | Orange | Schedule tasks | `SEQUENCE` `PARALLEL` `RESET` `WITHIN` `CONTINUE` |
 | Green bold | Math functions | `EXP` `LOG` `SQRT` `SIGMA` `PARTIAL` `INTEGRAL` |
-| Teal | PDE discretisation | `PDFSS` `PDCOL` `BFDIFF` `CFDIFF` |
+| Teal | PDE discretisation | `PDFSS` `PDCOL` `BFDIFF` `CFDM` `BFDM` |
 | Pink | Logical constants | `AND` `OR` `NOT` `TRUE` `FALSE` |
 | Red bold | Time derivative & assignment | `$Variable` `:=` |
 | Peach | Numbers | `1.0` `1e-6` `298.15` |
@@ -343,13 +355,15 @@ The extension applies its own colours automatically on top of your active VSCode
 | `:=` | Assignment operator (used in `SET`, `ASSIGN`, `INITIAL`, `RESET`) |
 | `;` | Equation terminator — required at the end of every equation |
 | `T(0\|+:L\|-)` | Distributed variable on open domain `(0, L)` — `\|+` excludes left, `\|-` excludes right |
+| `[CFDM, 2, 9]` | Discretisation specifier in `SET` section — method, lower bound, number of points |
+| `Unit.Var -> Unit.Var ;` | Port-based connection in `CONNECTIONS` section |
 | `END` | Closes all block types — `MODEL`, `PROCESS`, `FOR`, `IF`, `WHILE`, `CASE`, `SEQUENCE`, etc. |
 
 ---
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+See [CHANGELOG.md](https://github.com/SinaGhanbarii/gPROMS-ModelBuilder-VSCode-Extension/blob/main/CHANGELOG.md) for the full version history.
 
 ---
 
