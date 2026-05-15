@@ -1,8 +1,8 @@
 {
   "name": "gproms-modelbuilder",
   "displayName": "gPROMS ModelBuilder",
-  "description": "Syntax highlighting, code snippets, hover documentation and real-time error checking for gPROMS ModelBuilder GPL language",
-  "version": "0.8.0",
+  "description": "Syntax highlighting, code snippets, hover documentation and real-time error checking for gPROMS ModelBuilder.",
+  "version": "0.9.0",
   "publisher": "SinaGhanbarii",
   "engines": {
     "vscode": "^1.75.0"
@@ -25,9 +25,8 @@
     "onLanguage:gproms"
   ],
   "dependencies": {
-    "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "^9.0.1",
-    "vscode-languageserver-textdocument": "^1.0.11"
+    "vscode-languageserver-textdocument": "^1.0.12"
   },
   "contributes": {
     "languages": [
@@ -219,6 +218,8 @@
     "url": "https://github.com/SinaGhanbarii/gproms-modelbuilder"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0"
+    "@vscode/vsce": "^3.9.1",
+    "esbuild": "^0.28.0",
+    "vscode-languageclient": "^9.0.1"
   }
 }

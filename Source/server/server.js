@@ -2,7 +2,8 @@
 
 const {
   createConnection, TextDocuments, ProposedFeatures,
-  TextDocumentSyncKind, MarkupKind, DiagnosticSeverity
+  TextDocumentSyncKind, MarkupKind, DiagnosticSeverity,
+  CompletionItemKind
 } = require('vscode-languageserver/node');
 const { TextDocument } = require('vscode-languageserver-textdocument');
 
@@ -22,10 +23,13 @@ const BLOCK_OPEN_CLOSE = {
   PARALLEL: 'END',
   RESET:    'END',
   WITHIN:   'END',
-  CASE:     'END',
-  FOR:      'END',
-  WHILE:    'END',
-  IF:       'END',
+  CASE:        'END',
+  FOR:         'END',
+  WHILE:       'END',
+  IF:          'END',
+  OPTIMISATION:  'END',
+  ESTIMATION:    'END',
+  USE:           'END',
 };
 
 // Valid section headers and which top-level block they belong to
@@ -35,10 +39,19 @@ const VALID_IN_MODEL = new Set([
 ]);
 const VALID_IN_PROCESS = new Set([
   'UNIT','SET','ASSIGN','INITIAL','SELECTOR','SOLUTIONPARAMETERS',
-  'SCHEDULE','CONNECTIONS','REPORT','TOPOLOGY'
+  'SCHEDULE','CONNECTIONS','REPORT','TOPOLOGY','EQUATION',
+  'INITIALISATION_PROCEDURE','PRESET'
 ]);
 const VALID_IN_TASK = new Set([
   'VARIABLE','SCHEDULE'
+]);
+const VALID_IN_OPTIMISATION = new Set([
+  'USING','OBJECTIVE','FREE','FIXED','CONSTRAINTS',
+  'SOLUTIONPARAMETERS','ESTIMATE','SENSITIVITY',
+  'MEASUREMENTS','VARIABLE_TYPES'
+]);
+const VALID_IN_INITIALISATION = new Set([
+  'USE','SAVE','RESTORE','PRESET','WITHIN','FOR'
 ]);
 
 // Keywords that are only valid inside a SCHEDULE context
@@ -63,9 +76,35 @@ const BUILTIN_FUNCTIONS = new Set([
   'PDFSS','PDCOL','BFDIFF','CFDIFF','DPDSS','UDS1','UDS2'
 ]);
 
+// Discretisation method specifiers — appear in SET sections as [CFDM, 2, 9]
+// Must never be flagged as unknown keywords or misspellings
+const DISCRETISATION_METHODS = new Set([
+  'CFDM',    // Central Finite Difference Method
+  'BFDM',    // Backward Finite Difference Method
+  'FFDM',    // Forward Finite Difference Method
+  'MIXED',   // Mixed finite difference
+  'UDS',     // Upwind Differencing Scheme
+  'QDS',     // Quadratic Differencing Scheme
+  'PDCOL',   // Orthogonal Collocation on Finite Elements
+  'PDCOL2',  // Extended PDCOL
+  'PDFSS',   // Centred Finite Difference Steady State
+  'BFDIFF',  // Backward Finite Difference
+  'CFDIFF',  // Centred Finite Difference
+  'DPDSS',   // Discretisation
+  'UDS1',    // First-order Upwind
+  'UDS2',    // Second-order Upwind
+  'NONE'     // No discretisation
+]);
+
 // Every valid gPROMS keyword — used to detect misspellings
 const ALL_KEYWORDS = new Set([
-  'MODEL','PROCESS','TASK','END',
+  'MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION',
+  'INITIALISATION_PROCEDURE','INITIALISATION','USE','DEFAULT','END',
+  'VARIABLE_TYPE','PORT','INTERFACE','TOPOLOGY','EXTERNAL',
+  'USING','OBJECTIVE','CONSTRAINTS','MEASUREMENTS','VARIABLE_TYPES',
+  'AT','EVERY','INTERVAL','AFTER','SEND','GET','SENDMATHINFO',
+  'REINITIALISE','CHECKPOINT','REWIND','ABORT','WARNING','INFO',
+  'NOINT','REPORT_AFTER','GRADIENT','WITHIN_BOUNDS',
   'DECLARE','TYPE','STREAM_TYPE',
   'PARAMETER','VARIABLE','EQUATION','SELECTOR','UNIT','STREAM',
   'BOUNDARY','DISTRIBUTION_DOMAIN','SCHEDULE','INITIAL','ASSIGN',
@@ -82,8 +121,10 @@ const ALL_KEYWORDS = new Set([
   'PAUSE','SIGNALID','STATUS','WITHIN','MONITOR',
   'MAXIMISE','MINIMISE','ESTIMATE','SENSITIVITY',
   'REPORTINGINTERVAL','SIMULTANEOUS','PRINT',
+  'TITLES','HEADERS','FOOTER','COLUMN','NOHEADER',
   'NOT','TRUE','FALSE','MOD','DIV','OLD',
-  ...BUILTIN_FUNCTIONS
+  ...BUILTIN_FUNCTIONS,
+  ...DISCRETISATION_METHODS
 ]);
 
 // Misspelling candidates: map common mistakes to correct spelling
@@ -134,8 +175,11 @@ function tokenise(source) {
     const hashIdx = raw.indexOf('#');
     const code = hashIdx >= 0 ? raw.slice(0, hashIdx) : raw;
 
-    // Tokenise: identifiers, := , ; , = , $ prefixed identifiers
-    const re = /(\$[A-Za-z_][A-Za-z0-9_.()]*|[A-Za-z_][A-Za-z0-9_]*|:=|<>|<=|>=|[;=<>])/g;
+    // Tokenise: identifiers (including dotted unit.var paths), := , ; , =
+    // Dotted names like Solar_heater.mwi are captured as one token.
+    // Note: | in boundary notation (0|+:L|-) is intentionally not captured
+    // as a token — it appears inside parentheses and doesn't affect checking.
+    const re = /(\$[A-Za-z_][A-Za-z0-9_.()]*|[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*|:=|->|<>|<=|>=|[;=<>])/g;
     let m;
     while ((m = re.exec(code)) !== null) {
       const text = m[1];
@@ -161,32 +205,35 @@ function buildSymbolTable(tokens) {
   const symbols = new Set();
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
-    // MODEL <Name>, PROCESS <Name>, TASK <Name>
-    if (['MODEL','PROCESS','TASK'].includes(t.upper)) {
+
+    // MODEL <Name>, PROCESS <Name>, TASK <Name>, OPTIMISATION <Name>, ESTIMATION <Name>
+    if (['MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION'].includes(t.upper)) {
       const next = tokens[i+1];
       if (next && /^[A-Za-z_]/.test(next.text)) symbols.add(next.upper);
     }
+
     // DECLARE TYPE <Name>
     if (t.upper === 'DECLARE' && tokens[i+1]?.upper === 'TYPE') {
       const name = tokens[i+2];
       if (name) symbols.add(name.upper);
     }
-    // <Name> AS ...  (variable/parameter/unit instance declarations)
+
+    // <Name> AS <Type> — variable, parameter, unit instance, stream declarations
     if (t.upper === 'AS') {
       const prev = tokens[i-1];
       if (prev && /^[A-Za-z_]/.test(prev.text)) symbols.add(prev.upper);
-      // Also the type after AS
       const next = tokens[i+1];
       if (next && /^[A-Za-z_]/.test(next.text)) symbols.add(next.upper);
     }
+
     // WHEN <StateName> (selector state names)
     if (t.upper === 'WHEN') {
       const next = tokens[i+1];
       if (next && /^[A-Za-z_]/.test(next.text)) symbols.add(next.upper);
     }
+
     // SELECTOR: <n> AS (<State1>, <State2>) — collect state names
     if (t.upper === 'SELECTOR') {
-      // scan ahead for parenthesised list
       for (let j = i+1; j < Math.min(i+20, tokens.length); j++) {
         if (tokens[j].text === ')') break;
         if (/^[A-Za-z_]/.test(tokens[j].text) &&
@@ -194,6 +241,24 @@ function buildSymbolTable(tokens) {
           symbols.add(tokens[j].upper);
         }
       }
+    }
+
+    // Unit.variable dotted paths in SET/ASSIGN/INITIAL/EQUATION:
+    // The base name before a dot is always a unit instance — add it to symbols.
+    // This prevents unit instance names from being flagged as unknown keywords.
+    // We detect these by looking for tokens followed by another token on the
+    // same line where the pair forms a dotted path (tokeniser gives them separately).
+    // Heuristic: any identifier at line start that is followed by a dot-like
+    // pattern is a unit instance reference.
+    const next = tokens[i+1];
+    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(t.text) &&
+        next && next.line === t.line &&
+        // next token starts immediately after (dotted path: "Unit.var")
+        // We can't see the dot since tokeniser skips it, but if two identifiers
+        // appear consecutively on the same line separated by nothing meaningful,
+        // they are likely a dotted path
+        !ALL_KEYWORDS.has(t.upper)) {
+      symbols.add(t.upper);
     }
   }
   return symbols;
@@ -317,8 +382,9 @@ function check(tokens, symbols, fileType) {
     if (Object.prototype.hasOwnProperty.call(BLOCK_OPEN_CLOSE, t.upper)) {
 
       // Top-level MODEL/PROCESS/TASK must not be nested inside each other
-      if (['MODEL','PROCESS','TASK'].includes(t.upper)) {
-        const outer = stack.find(s => ['MODEL','PROCESS','TASK'].includes(s.keyword));
+      if (['MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION',
+           'INITIALISATION_PROCEDURE'].includes(t.upper)) {
+        const outer = stack.find(s => ['MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION'].includes(s.keyword));
         if (outer) {
           err(t, `"${t.upper}" cannot be nested inside "${outer.keyword}". Close the outer block first.`);
         }
@@ -357,10 +423,14 @@ function check(tokens, symbols, fileType) {
 
       // SCHEDULE-only keywords used outside SCHEDULE context
       if (SCHEDULE_ONLY_KEYWORDS.has(t.upper)) {
-        const inSched = inStack('SEQUENCE') || inStack('PARALLEL') ||
-                        inStack('RESET')    || inStack('WITHIN')   ||
-                        currentSection === 'SCHEDULE';
-        if (!inSched) {
+        const inSched  = inStack('SEQUENCE') || inStack('PARALLEL') ||
+                         inStack('RESET')    || inStack('WITHIN')   ||
+                         currentSection === 'SCHEDULE';
+        const inOptim  = inStack('OPTIMISATION') || inStack('ESTIMATION');
+        const inInitPr = currentSection === 'INITIALISATION_PROCEDURE'
+                      || currentSection === 'PRESET'
+                      || currentSection === 'REPORT';
+        if (!inSched && !inOptim && !inInitPr) {
           err(t, `"${t.upper}" is a SCHEDULE keyword and cannot appear here. It must be inside a SCHEDULE block.`);
           i++; continue;
         }
@@ -411,16 +481,21 @@ function check(tokens, symbols, fileType) {
         }
       }
 
-      const outerTL = stack.filter(s => ['MODEL','PROCESS','TASK'].includes(s.keyword));
+      const outerTL = stack.filter(s =>
+        ['MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION'].includes(s.keyword));
       const tlBlock = outerTL.length ? outerTL[outerTL.length-1].keyword : null;
 
-      // MODEL section used inside PROCESS
+      // MODEL section used inside PROCESS/OPTIMISATION/ESTIMATION
       if (tlBlock === 'PROCESS' && VALID_IN_MODEL.has(t.upper) && !VALID_IN_PROCESS.has(t.upper)) {
         err(t, `"${t.upper}" is a MODEL section and cannot appear inside a PROCESS block.`);
       }
       // PROCESS section used inside MODEL
       if (tlBlock === 'MODEL' && VALID_IN_PROCESS.has(t.upper) && !VALID_IN_MODEL.has(t.upper)) {
         err(t, `"${t.upper}" is a PROCESS/TASK section and cannot appear inside a MODEL block.`);
+      }
+      // Skip section validation for OPTIMISATION/ESTIMATION — allow their sections freely
+      if (['OPTIMISATION','ESTIMATION'].includes(tlBlock)) {
+        currentSection = t.upper; i++; continue;
       }
 
       prevSection    = currentSection;
@@ -443,10 +518,14 @@ function check(tokens, symbols, fileType) {
 
     // ── Schedule-only keywords outside SCHEDULE ───────────────────────────────
     if (SCHEDULE_ONLY_KEYWORDS.has(t.upper)) {
-      const inSched = inStack('SEQUENCE') || inStack('PARALLEL') ||
-                      inStack('RESET')    || inStack('WITHIN')   ||
-                      currentSection === 'SCHEDULE';
-      if (!inSched && !['MODEL','PROCESS','TASK'].includes(t.upper)) {
+      const inSched  = inStack('SEQUENCE') || inStack('PARALLEL') ||
+                       inStack('RESET')    || inStack('WITHIN')   ||
+                       currentSection === 'SCHEDULE';
+      const inOptim  = inStack('OPTIMISATION') || inStack('ESTIMATION');
+      const inInitPr = currentSection === 'INITIALISATION_PROCEDURE'
+                    || currentSection === 'PRESET'
+                    || currentSection === 'REPORT';
+      if (!inSched && !inOptim && !inInitPr && !['MODEL','PROCESS','TASK'].includes(t.upper)) {
         err(t, `"${t.upper}" is a SCHEDULE keyword and cannot appear in a "${currentSection || 'unknown'}" section.`);
       }
     }
@@ -457,9 +536,11 @@ function check(tokens, symbols, fileType) {
     // (i.e. appear at the start of a statement, or after specific contexts)
     if (t.text === t.text.toUpperCase() &&          // all caps
         /^[A-Z][A-Z0-9_]{2,}$/.test(t.text) &&     // 3+ chars, caps/digits/underscore
+        !t.text.includes('.') &&                    // not a dotted path
         !ALL_KEYWORDS.has(t.upper) &&               // not a known keyword
         !symbols.has(t.upper) &&                    // not a declared name
-        !BUILTIN_FUNCTIONS.has(t.upper)) {          // not a function
+        !BUILTIN_FUNCTIONS.has(t.upper) &&          // not a function
+        !DISCRETISATION_METHODS.has(t.upper)) {     // not a discretisation method
 
       // Only flag if it appears as the first meaningful token on its line
       // (i.e. it's trying to be a keyword, not a variable reference)
@@ -706,6 +787,104 @@ function checkSemicolons(tokens, symbols, diagnostics) {
   }
 }
 
+// ── Assignment semicolon checker (SET / ASSIGN / INITIAL / SOLUTIONPARAMETERS)
+// Same continuation-line grouping logic as checkSemicolons, but for
+// assignment sections where lines end with := ... ;
+function checkAssignmentSemicolons(tokens, symbols, diagnostics) {
+  const ASSIGN_SECTIONS = new Set([
+    'SET','ASSIGN','INITIAL','SOLUTIONPARAMETERS','CONNECTIONS'
+  ]);
+  const EXIT_SECTIONS = new Set([
+    'PARAMETER','VARIABLE','EQUATION','SELECTOR','UNIT','STREAM',
+    'BOUNDARY','DISTRIBUTION_DOMAIN','SCHEDULE','CONNECTIONS',
+    'REPORT','TOPOLOGY','MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION'
+  ]);
+
+  // Group tokens by line
+  const byLine = new Map();
+  for (const t of tokens) {
+    if (!byLine.has(t.line)) byLine.set(t.line, []);
+    byLine.get(t.line).push(t);
+  }
+
+  // Collect lines inside SET/ASSIGN/INITIAL/SOLUTIONPARAMETERS
+  const assignLines = new Set();
+  let inAssign = false;
+
+  for (const t of tokens) {
+    if (ASSIGN_SECTIONS.has(t.upper))      { inAssign = true;  continue; }
+    if (EXIT_SECTIONS.has(t.upper))        { inAssign = false; continue; }
+    if (t.upper === 'END')                 { inAssign = false; continue; }
+    if (inAssign) assignLines.add(t.line);
+  }
+
+  if (assignLines.size === 0) return;
+
+  // Continuation: previous line ended with := or an operator (value spans lines)
+  function isContinuation(lineNum) {
+    const prevToks = byLine.get(lineNum - 1) || [];
+    if (prevToks.length === 0) return false;
+    const last = prevToks[prevToks.length - 1].text;
+    return [':=', '+', '-', '*', '/', '^', '(', ','].includes(last);
+  }
+
+  // Group into logical assignment statements
+  const sorted = [...assignLines].sort((a, b) => a - b);
+  const groups = [];
+  let cur = [];
+
+  for (const ln of sorted) {
+    if (cur.length === 0) {
+      cur.push(ln);
+    } else {
+      const prev = cur[cur.length - 1];
+      if (ln === prev + 1 && isContinuation(ln)) {
+        cur.push(ln);
+      } else {
+        groups.push(cur);
+        cur = [ln];
+      }
+    }
+  }
+  if (cur.length > 0) groups.push(cur);
+
+  // Check each group
+  const SKIP_KEYWORDS = new Set(['STEADY_STATE','SELECTOR','USING','FREE',
+    'FIXED','ESTIMATE','SENSITIVITY','MEASUREMENTS','CONSTRAINTS','OBJECTIVE']);
+
+  for (const group of groups) {
+    const allToks = group.flatMap(ln => byLine.get(ln) || []);
+    if (allToks.length === 0) continue;
+
+    // Skip keyword-only lines (STEADY_STATE, SELECTOR etc.)
+    if (SKIP_KEYWORDS.has(allToks[0].upper)) continue;
+
+    // Only check lines that contain := (assignment)
+    const hasAssign = allToks.some(t => t.text === ':=');
+    if (!hasAssign) continue;
+
+    // Check last line for semicolon
+    const lastLn   = group[group.length - 1];
+    const lastToks = byLine.get(lastLn) || [];
+    const hasSemi  = lastToks.some(t => t.text === ';');
+
+    if (!hasSemi) {
+      const lastTok = lastToks[lastToks.length - 1];
+      if (lastTok) {
+        diagnostics.push({
+          severity: DiagnosticSeverity.Error,
+          range: {
+            start: { line: lastTok.line, character: lastTok.col + lastTok.len },
+            end:   { line: lastTok.line, character: lastTok.col + lastTok.len + 1 }
+          },
+          message: 'Assignment is missing a terminating semicolon (;).',
+          source: 'gPROMS'
+        });
+      }
+    }
+  }
+}
+
 // ── Edit-distance keyword suggestion ─────────────────────────────────────────
 function editDistance(a, b) {
   const m = a.length, n = b.length;
@@ -723,14 +902,21 @@ function editDistance(a, b) {
 
 // Only suggest structural/section keywords as corrections (not functions)
 const CHECKABLE_KEYWORDS = [
-  'MODEL','PROCESS','TASK','END',
+  'MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION',
+  'INITIALISATION_PROCEDURE','INITIALISATION','USE','DEFAULT','END',
+  'VARIABLE_TYPE','PORT','INTERFACE','TOPOLOGY','EXTERNAL',
+  'USING','OBJECTIVE','CONSTRAINTS','MEASUREMENTS','VARIABLE_TYPES',
+  'AT','EVERY','INTERVAL','AFTER','SEND','GET','SENDMATHINFO',
+  'REINITIALISE','CHECKPOINT','REWIND','ABORT','WARNING','INFO',
+  'NOINT','REPORT_AFTER','GRADIENT','WITHIN_BOUNDS',
   'DECLARE','TYPE','PARAMETER','VARIABLE','EQUATION','SELECTOR',
   'UNIT','STREAM','BOUNDARY','DISTRIBUTION_DOMAIN','SCHEDULE',
   'INITIAL','ASSIGN','SET','SOLUTIONPARAMETERS','CONNECTIONS',
   'FOR','WHILE','IF','THEN','ELSE','CASE','WHEN','OTHERWISE',
   'SEQUENCE','PARALLEL','CONTINUE','RESET','WITHIN','STOP',
   'STEADY_STATE','FOREIGN_OBJECT','ARRAY','DISTRIBUTION',
-  'REAL','INTEGER','LOGICAL','DEFAULT','AS','OF','IS'
+  'REAL','INTEGER','LOGICAL','DEFAULT','AS','OF','IS',
+  'USING','USE','INITIALISATION_PROCEDURE'
 ];
 
 function findClosestKeyword(word) {
@@ -754,7 +940,7 @@ function detectFileType(text) {
     const m = line.match(/^#\s*TYPE\s*:\s*(\w+)/i);
     if (m) {
       const t = m[1].toUpperCase();
-      if (['MODEL','PROCESS','TASK'].includes(t)) return t;
+      if (['MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION'].includes(t)) return t;
     }
   }
   return null;
@@ -787,9 +973,11 @@ function checkSafeOnly(tokens, symbols) {
     const prev = i > 0 ? tokens[i-1] : null;
     if (t.text === t.text.toUpperCase() &&
         /^[A-Z][A-Z0-9_]{2,}$/.test(t.text) &&
+        !t.text.includes('.') &&
         !ALL_KEYWORDS.has(t.upper) &&
         !symbols.has(t.upper) &&
-        !BUILTIN_FUNCTIONS.has(t.upper)) {
+        !BUILTIN_FUNCTIONS.has(t.upper) &&
+        !DISCRETISATION_METHODS.has(t.upper)) {
       const isLineStart = !prev || prev.line < t.line;
       if (isLineStart) {
         const suggestion = KNOWN_MISSPELLINGS[t.upper] || findClosestKeyword(t.upper);
@@ -800,8 +988,9 @@ function checkSafeOnly(tokens, symbols) {
     }
   }
 
-  // Semicolon check (safe — only fires inside a clearly open EQUATION section)
+  // Semicolon checks
   checkSemicolons(tokens, symbols, diagnostics);
+  checkAssignmentSemicolons(tokens, symbols, diagnostics);
   return diagnostics;
 }
 
@@ -816,10 +1005,33 @@ function validate(doc) {
     const tokens   = tokenise(text);
     const symbols  = buildSymbolTable(tokens);
 
-    // No # TYPE: hint → skip structural checks entirely (zero false positives)
-    const diags = fileType
+    // No # TYPE: hint → skip structural checks (zero false positives)
+    // but add a single informational diagnostic on line 1 guiding the user
+    let diags = fileType
       ? check(tokens, symbols, fileType)
       : checkSafeOnly(tokens, symbols);
+
+    if (!fileType) {
+      // Only show the hint if the file looks like gPROMS code
+      // (contains at least one known keyword)
+      const looksLikeGproms = tokens.some(t =>
+        ['MODEL','PROCESS','TASK','PARAMETER','VARIABLE',
+         'EQUATION','DECLARE','SCHEDULE'].includes(t.upper)
+      );
+      if (looksLikeGproms) {
+        diags = [{
+          severity: DiagnosticSeverity.Information,
+          range: {
+            start: { line: 0, character: 0 },
+            end:   { line: 0, character: 1 }
+          },
+          message: 'Add "# TYPE: MODEL", "# TYPE: PROCESS", "# TYPE: TASK", ' +
+                   '"# TYPE: OPTIMISATION" or "# TYPE: ESTIMATION" ' +
+                   'as the first line to enable full structural error checking.',
+          source: 'gPROMS'
+        }, ...diags];
+      }
+    }
 
     connection.sendDiagnostics({ uri: doc.uri, diagnostics: diags });
   } catch (e) {
@@ -913,18 +1125,247 @@ const HOVER_DOCS = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// EXTENDED SYMBOL TABLE
+// Builds a richer map of declared symbols with their kind and type info.
+// Used by auto-complete to offer context-aware suggestions.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// AUTO-COMPLETE ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Rich symbol table ──────────────────────────────────────────────────────────
+// Builds a richer map: name (UPPER) → { name, kind, detail }
+// Used by completion to show correctly typed suggestions.
+
+function buildRichSymbols(tokens) {
+  const map = new Map();
+
+  function add(name, kind, detail) {
+    if (!name || name.includes('.')) return;
+    const u = name.toUpperCase();
+    if (ALL_KEYWORDS.has(u)) return;
+    if (!map.has(u)) map.set(u, { name, kind, detail: detail || '' });
+  }
+
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+
+    // Entity names: MODEL Foo, PROCESS Bar, etc.
+    if (['MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION'].includes(t.upper)) {
+      const n = tokens[i+1];
+      if (n && /^[A-Za-z_]/.test(n.text))
+        add(n.text, CompletionItemKind.Class, t.text + ' name');
+    }
+
+    // DECLARE TYPE <TypeName>
+    if (t.upper === 'DECLARE' && tokens[i+1] && tokens[i+1].upper === 'TYPE') {
+      const n = tokens[i+2];
+      if (n) add(n.text, CompletionItemKind.TypeParameter, 'variable type');
+    }
+
+    // <Name> AS <Type>
+    if (t.upper === 'AS' && i > 0) {
+      const prev = tokens[i-1];
+      const typ  = tokens[i+1];
+      if (prev && /^[A-Za-z_]/.test(prev.text) && !prev.text.includes('.')) {
+        let kind = CompletionItemKind.Variable;
+        for (let j = i-1; j >= Math.max(0, i-40); j--) {
+          const u = tokens[j].upper;
+          if (u === 'PARAMETER')  { kind = CompletionItemKind.Constant;  break; }
+          if (u === 'VARIABLE')   { kind = CompletionItemKind.Variable;  break; }
+          if (u === 'UNIT')       { kind = CompletionItemKind.Module;    break; }
+          if (u === 'STREAM')     { kind = CompletionItemKind.Interface; break; }
+          if (['MODEL','PROCESS','TASK'].includes(u)) break;
+        }
+        add(prev.text, kind, typ ? 'AS ' + typ.text : '');
+      }
+      // The type name itself is also a user symbol
+      if (typ && /^[A-Za-z_]/.test(typ.text) && !ALL_KEYWORDS.has(typ.upper))
+        add(typ.text, CompletionItemKind.TypeParameter, 'type');
+    }
+
+    // SELECTOR state names
+    if (t.upper === 'SELECTOR') {
+      for (let j = i+1; j < Math.min(i+25, tokens.length); j++) {
+        if (tokens[j].text === ')') break;
+        const s = tokens[j];
+        if (/^[A-Za-z_]/.test(s.text) && !ALL_KEYWORDS.has(s.upper))
+          add(s.text, CompletionItemKind.EnumMember, 'selector state');
+      }
+    }
+
+    // WHEN <State>
+    if (t.upper === 'WHEN') {
+      const n = tokens[i+1];
+      if (n && /^[A-Za-z_]/.test(n.text))
+        add(n.text, CompletionItemKind.EnumMember, 'selector state');
+    }
+  }
+
+  return map;
+}
+
+// ── Keyword completion lists ───────────────────────────────────────────────────
+const KW_BLOCKS    = ['MODEL','PROCESS','TASK','OPTIMISATION','ESTIMATION','DECLARE'];
+const KW_SECTIONS  = ['PARAMETER','VARIABLE','EQUATION','SELECTOR','UNIT','STREAM',
+                      'BOUNDARY','DISTRIBUTION_DOMAIN','SCHEDULE','INITIAL','ASSIGN',
+                      'SET','PRESET','CONNECTIONS','SOLUTIONPARAMETERS','REPORT',
+                      'INITIALISATION_PROCEDURE'];
+const KW_CONTROL   = ['FOR','TO','STEP','DO','END','IF','THEN','ELSE','ELSEIF',
+                      'WHILE','CASE','WHEN','OTHERWISE','SWITCH'];
+const KW_SCHEDULE  = ['SEQUENCE','PARALLEL','CONTINUE','RESET','WITHIN','STOP',
+                      'MESSAGE','SAVE','RESTORE','PAUSE','MAXIMISE','MINIMISE'];
+const KW_TYPES     = ['AS','OF','ARRAY','DISTRIBUTION','FOREIGN_OBJECT','REAL',
+                      'INTEGER','LOGICAL','DEFAULT','LOWER','UPPER','FREE','FIXED',
+                      'GIVEN','STEADY_STATE','IS','OLD'];
+const KW_LOGIC     = ['AND','OR','NOT','TRUE','FALSE'];
+
+// Context snippets shown after specific preceding keywords
+const CTX_SNIPPETS = {
+  'AS': [
+    { label:'AS REAL DEFAULT',           insert:'AS REAL DEFAULT ',               detail:'real parameter' },
+    { label:'AS INTEGER',                 insert:'AS INTEGER',                     detail:'integer parameter' },
+    { label:'AS LOGICAL DEFAULT TRUE',    insert:'AS LOGICAL DEFAULT TRUE',        detail:'boolean parameter' },
+    { label:'AS ARRAY() OF',             insert:'AS ARRAY(${1:N}) OF ',           detail:'array' },
+    { label:'AS DISTRIBUTION() OF',      insert:'AS DISTRIBUTION(${1:D}) OF ',    detail:'distributed variable' },
+    { label:'AS FOREIGN_OBJECT ""',      insert:'AS FOREIGN_OBJECT "${1:Class}"', detail:'external package' },
+  ],
+  'FOR': [
+    { label:'FOR i := 1 TO N DO', insert:'FOR ${1:i} := 1 TO ${2:N} DO', detail:'for loop' },
+  ],
+  'CONTINUE': [
+    { label:'CONTINUE FOR',       insert:'CONTINUE FOR ',                  detail:'integrate forward' },
+  ],
+  'INITIAL': [
+    { label:'INITIAL STEADY_STATE', insert:'INITIAL\n  STEADY_STATE',      detail:'steady-state init' },
+  ],
+  'SWITCH': [
+    { label:'SWITCH TO',          insert:'SWITCH TO ',                     detail:'state transition' },
+  ],
+};
+
+// ── Main completion handler ────────────────────────────────────────────────────
+
+function getCompletions(doc, pos, richSymbols) {
+  const text  = doc.getText();
+  const lines = text.split(/\r?\n/);
+  const line  = lines[pos.line] || '';
+
+  // Extract typed prefix
+  let s = pos.character;
+  while (s > 0 && /[A-Za-z0-9_]/.test(line[s-1])) s--;
+  const prefix = line.slice(s, pos.character).toUpperCase();
+
+  // Is the cursor right after a dot? (unit.var context)
+  const afterDot = s > 0 && line[s-1] === '.';
+
+  // What is the word before the cursor (or before the prefix)?
+  let ps = s - 1;
+  while (ps >= 0 && /\s/.test(line[ps])) ps--;
+  let pe = ps;
+  while (pe > 0 && /[A-Za-z0-9_]/.test(line[pe-1])) pe--;
+  const prevWord = line.slice(pe, ps+1).toUpperCase();
+
+  const items = [];
+  const seen  = new Set();
+
+  function push(label, kind, detail, sortPfx, insertText) {
+    if (seen.has(label)) return;
+    if (prefix && !label.toUpperCase().startsWith(prefix)) return;
+    seen.add(label);
+    const item = { label, kind, detail: detail || '', sortText: sortPfx + label };
+    if (insertText) item.insertText = insertText;
+    items.push(item);
+  }
+
+  // 1. Context-sensitive snippets (float to the very top)
+  if (!afterDot && CTX_SNIPPETS[prevWord]) {
+    for (const s of CTX_SNIPPETS[prevWord])
+      push(s.label, CompletionItemKind.Snippet, s.detail, '0', s.insert);
+  }
+
+  // 2. User-defined symbols from the file (names you actually declared)
+  for (const [, sym] of richSymbols)
+    push(sym.name, sym.kind, sym.detail, '1');
+
+  // 3. Built-in math functions
+  if (!afterDot) {
+    for (const fn of BUILTIN_FUNCTIONS) {
+      const doc = HOVER_DOCS[fn];
+      push(fn, CompletionItemKind.Function,
+        doc ? doc.signature.split('\n')[0] : 'built-in function', '2');
+    }
+  }
+
+  // 4. Discretisation methods (for [CFDM, 2, 9] context)
+  if (!afterDot) {
+    for (const dm of DISCRETISATION_METHODS)
+      push(dm, CompletionItemKind.Keyword, 'discretisation method', '3');
+  }
+
+  // 5. Structural keywords (not after a dot)
+  if (!afterDot) {
+    const kmap = [
+      [KW_BLOCKS,   CompletionItemKind.Class,         '4b'],
+      [KW_SECTIONS, CompletionItemKind.Module,        '4s'],
+      [KW_CONTROL,  CompletionItemKind.Keyword,       '4c'],
+      [KW_SCHEDULE, CompletionItemKind.Event,         '4e'],
+      [KW_TYPES,    CompletionItemKind.TypeParameter, '4t'],
+      [KW_LOGIC,    CompletionItemKind.Operator,      '4l'],
+    ];
+    for (const [list, kind, sort] of kmap) {
+      for (const kw of list) {
+        const doc = HOVER_DOCS[kw];
+        push(kw, kind,
+          doc ? doc.description.slice(0, 55) + '...' : '', sort);
+      }
+    }
+  }
+
+  return items;
+}
+
+// ── Per-document rich symbol cache ─────────────────────────────────────────────
+const richCache = new Map();
+
+function updateCache(doc) {
+  const tokens = tokenise(doc.getText());
+  richCache.set(doc.uri, buildRichSymbols(tokens));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SERVER WIRING
 // ═══════════════════════════════════════════════════════════════════════════════
 
 connection.onInitialize(() => ({
   capabilities: {
     textDocumentSync: TextDocumentSyncKind.Incremental,
-    hoverProvider: true
+    hoverProvider: true,
+    completionProvider: {
+      triggerCharacters: ['.', ' ', '\t'],
+      resolveProvider: false
+    }
   }
 }));
 
-documents.onDidOpen(e => validate(e.document));
-documents.onDidChangeContent(e => validate(e.document));
+
+documents.onDidChangeContent(e => {
+  const tokens = tokenise(e.document.getText());
+  richSymbolCache.set(e.document.uri, buildRichSymbols(tokens));
+  validate(e.document);
+});
+
+connection.onCompletion((params) => {
+  const doc = documents.get(params.textDocument.uri);
+  if (!doc) return [];
+  const richSymbols = richSymbolCache.get(params.textDocument.uri) || new Map();
+  try {
+    return getCompletions(doc, params.position, richSymbols);
+  } catch (e) {
+    connection.console.error('Completion error: ' + e.message);
+    return [];
+  }
+});
 
 connection.onHover((params) => {
   const doc = documents.get(params.textDocument.uri);

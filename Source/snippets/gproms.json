@@ -2,10 +2,10 @@
   "Header Comment Block": {
     "prefix": "header",
     "body": [
-      "# TYPE: ${1|MODEL,PROCESS,TASK|}",
+      "# TYPE: ${1|MODEL,PROCESS,TASK,OPTIMISATION,ESTIMATION|}",
       "{",
       "    gPROMS Model file",
-      "    Model   : ${2:Name}",
+      "    Name    : ${2:Name}",
       "    Author  : ${3:Your Name}",
       "    Date    : ${4:YYYY-MM-DD}",
       "    Description : ${5:Brief description}",
@@ -763,7 +763,7 @@
   "File type hint": {
     "prefix": "typehint",
     "body": [
-      "# TYPE: ${1|MODEL,PROCESS,TASK|}"
+      "# TYPE: ${1|MODEL,PROCESS,TASK,OPTIMISATION,ESTIMATION|}"
     ],
     "description": "Insert a # TYPE: hint so the error checker knows this file's block type"
   },
